@@ -1,0 +1,16 @@
+.git
+.gitignore
+.dockerignore
+
+.env
+.env.*
+
+Dockerfile
+compose.yaml
+compose.yml
+docker-compose.yaml
+docker-compose.yml
+
+bin/
+tmp/
+*.log
