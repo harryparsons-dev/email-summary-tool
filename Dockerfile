@@ -1,4 +1,4 @@
-FROM golang:1.26.5-alpine AS build
+FROM golang:1.26.5-alpine AS development
 
 WORKDIR /app
 
@@ -6,6 +6,10 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
+
+CMD ["go", "tool", "air", "-c", ".air.toml"]
+
+FROM development AS build
 
 RUN CGO_ENABLED=0 GOOS=linux go build -buildvcs=false -o /email-summary-tool ./main
 
