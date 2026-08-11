@@ -38,6 +38,10 @@ go.work.sum
 /.cache/
 *.pid
 
+# Frontend dependencies and build output
+node_modules/
+frontend/dist/
+
 # Editor and IDE settings
 .idea/
 .vscode/
