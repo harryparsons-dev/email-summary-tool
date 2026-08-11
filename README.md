@@ -71,6 +71,15 @@ Run the backend tests:
 docker compose exec api go test ./...
 ```
 
+Create an empty up/down migration pair:
+
+```sh
+docker compose exec api go run -tags pgx5 github.com/golang-migrate/migrate/v4/cmd/migrate create -ext sql -dir database/migrations/sql -seq -digits 6 migration_name
+```
+
+Migration files live in `database/migrations/sql`. The API does not run them
+automatically; applying or rolling back migrations must be done explicitly.
+
 Run the frontend type checker:
 
 ```sh
