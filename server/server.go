@@ -34,14 +34,6 @@ func NewServer() *Server {
 
 	routes.InitializeRoutes(e)
 
-	var greeting string
-	err = dbpool.QueryRow(context.Background(), "select 'Hello, world!'").Scan(&greeting)
-	if err != nil {
-		log.Fatalf("QueryRow failed: %v", err)
-	}
-
-	log.Printf("Database connection successful: %s", greeting)
-
 	return &Server{e: e, Db: dbpool}
 }
 
