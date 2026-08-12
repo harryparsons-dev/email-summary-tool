@@ -25,7 +25,7 @@ Create the local environment file:
 cp .env.example .env
 ```
 
-Open `.env` and replace the example PostgreSQL password. Then build and start the development stack:
+Open `.env` and replace the example PostgreSQL password and JWT secret. Generate a JWT secret with, for example, `openssl rand -base64 48`. Then build and start the development stack:
 
 ```sh
 docker compose up --build
@@ -124,5 +124,30 @@ Docker Compose reads the following values from `.env`:
 | `POSTGRES_DB` | Name of the local application database |
 | `POSTGRES_USER` | PostgreSQL application user |
 | `POSTGRES_PASSWORD` | Password for the PostgreSQL user |
+| `JWT_SECRET` | Secret of at least 32 characters used to sign access and refresh JWTs |
+| `APP_ENV` | Runtime environment; set to `production` in production |
+| `APP_BASE_URL` | Public frontend origin used to build password-reset links |
+| `AUTH_COOKIE_SECURE` | Marks refresh cookies HTTPS-only; must be `true` in production |
+| `SMTP_HOST` | Optional SMTP server; when omitted locally, password reset links are printed in API logs |
+| `SMTP_PORT` | SMTP port, defaulting to `587` |
+| `SMTP_USERNAME` | Optional SMTP username |
+| `SMTP_PASSWORD` | Optional SMTP password |
+| `SMTP_FROM` | Sender address; required when `SMTP_HOST` is set |
 
 Changing these values does not update an existing PostgreSQL volume. Reset the local data volume if the database has already been initialized and the credentials need to change.
+
+## Authentication API
+
+The frontend proxies `/api/*` to the API, so browser requests use the `/api/auth` prefix. Direct API requests use `/auth`.
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `POST` | `/auth/register` | Create an account with `email` and `password` |
+| `POST` | `/auth/login` | Log in with `email` and `password` |
+| `POST` | `/auth/refresh` | Rotate the HttpOnly refresh-token cookie and return a new access token |
+| `POST` | `/auth/logout` | Revoke the current refresh token and clear its cookie |
+| `GET` | `/auth/me` | Return the current user; requires `Authorization: Bearer <access token>` |
+| `POST` | `/auth/password/forgot` | Request a reset link with `email` |
+| `POST` | `/auth/password/reset` | Set a new password with `token` and `password` |
+
+Passwords must contain at least 12 characters. Access tokens expire after 15 minutes. Refresh tokens expire after 30 days, are rotated on every refresh, and are stored only in an HttpOnly, SameSite=Strict cookie. Completing a password reset revokes every existing refresh token for that account.

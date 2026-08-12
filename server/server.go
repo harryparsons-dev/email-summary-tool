@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"email-summary-tool/auth"
 	"email-summary-tool/database/migrations"
 	"email-summary-tool/routes"
 	"log"
@@ -38,7 +39,15 @@ func NewServer() *Server {
 		log.Fatalf("Unable to apply database migrations: %v", err)
 	}
 
-	routes.InitializeRoutes(e)
+	authConfig, err := auth.ConfigFromEnv()
+	if err != nil {
+		dbpool.Close()
+		log.Fatalf("Invalid authentication configuration: %v", err)
+	}
+	if err := routes.InitializeRoutes(e, dbpool, authConfig); err != nil {
+		dbpool.Close()
+		log.Fatalf("Unable to initialize routes: %v", err)
+	}
 
 	return &Server{e: e, DB: dbpool}
 }

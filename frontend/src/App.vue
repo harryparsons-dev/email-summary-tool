@@ -2,9 +2,47 @@
 import { computed, onMounted, ref } from 'vue'
 
 type ApiState = 'loading' | 'connected' | 'error'
+type AuthView = 'login' | 'register' | 'forgot' | 'reset'
+
+interface User {
+  id: string
+  email: string
+  created_at: string
+}
+
+interface AuthResponse {
+  user: User
+  access_token: string
+  token_type: string
+  expires_in: number
+}
 
 const apiState = ref<ApiState>('loading')
 const apiMessage = ref('Checking the API connection…')
+const authDialog = ref<HTMLDialogElement>()
+const authView = ref<AuthView>('login')
+const authEmail = ref('')
+const authPassword = ref('')
+const authError = ref('')
+const authMessage = ref('')
+const authBusy = ref(false)
+const resetToken = ref('')
+const accessToken = ref('')
+const currentUser = ref<User | null>(null)
+
+const authTitle = computed(() => ({
+  login: 'Welcome back',
+  register: 'Create your account',
+  forgot: 'Reset your password',
+  reset: 'Choose a new password',
+}[authView.value]))
+
+const authDescription = computed(() => ({
+  login: 'Sign in to open your calm, focused inbox.',
+  register: 'Start turning busy threads into a useful daily brief.',
+  forgot: 'Enter your email and we’ll send you a secure reset link.',
+  reset: 'Use at least 12 characters for your new password.',
+}[authView.value]))
 
 const statusLabel = computed(() => {
   if (apiState.value === 'connected') return 'Systems online'
@@ -93,7 +131,113 @@ function scrollToFeatures() {
   document.querySelector('#how-it-works')?.scrollIntoView({ behavior: 'smooth' })
 }
 
-onMounted(checkApi)
+function showAuth(view: AuthView) {
+  authView.value = view
+  authError.value = ''
+  authMessage.value = ''
+  authPassword.value = ''
+  authDialog.value?.showModal()
+}
+
+function switchAuth(view: AuthView) {
+  authView.value = view
+  authError.value = ''
+  authMessage.value = ''
+  authPassword.value = ''
+}
+
+async function authRequest(path: string, body?: object): Promise<Response> {
+  return fetch(`/api/auth${path}`, {
+    method: body ? 'POST' : 'GET',
+    headers: body ? { 'Content-Type': 'application/json' } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+  })
+}
+
+async function responseError(response: Response): Promise<string> {
+  try {
+    const body = await response.json()
+    return body.error?.message ?? 'Please try again.'
+  } catch {
+    return 'Please try again.'
+  }
+}
+
+function acceptSession(session: AuthResponse) {
+  currentUser.value = session.user
+  accessToken.value = session.access_token
+}
+
+async function submitAuth() {
+  authBusy.value = true
+  authError.value = ''
+  authMessage.value = ''
+  try {
+    if (authView.value === 'forgot') {
+      const response = await authRequest('/password/forgot', { email: authEmail.value })
+      if (!response.ok) throw new Error(await responseError(response))
+      const body = await response.json()
+      authMessage.value = body.message
+      return
+    }
+
+    if (authView.value === 'reset') {
+      const response = await authRequest('/password/reset', {
+        token: resetToken.value,
+        password: authPassword.value,
+      })
+      if (!response.ok) throw new Error(await responseError(response))
+      window.history.replaceState({}, '', window.location.pathname)
+      resetToken.value = ''
+      switchAuth('login')
+      authMessage.value = 'Password updated. Sign in with your new password.'
+      return
+    }
+
+    const endpoint = authView.value === 'register' ? '/register' : '/login'
+    const response = await authRequest(endpoint, { email: authEmail.value, password: authPassword.value })
+    if (!response.ok) throw new Error(await responseError(response))
+    acceptSession(await response.json())
+    authDialog.value?.close()
+  } catch (error) {
+    authError.value = error instanceof Error ? error.message : 'Please try again.'
+  } finally {
+    authBusy.value = false
+  }
+}
+
+async function restoreSession() {
+  try {
+    const response = await authRequest('/refresh', {})
+    if (response.ok) acceptSession(await response.json())
+  } catch {
+    // No active session is a normal state for the public landing page.
+  }
+}
+
+async function logout() {
+  try {
+    await authRequest('/logout', {})
+  } finally {
+    currentUser.value = null
+    accessToken.value = ''
+  }
+}
+
+function primaryAction() {
+  if (currentUser.value) scrollToPreview()
+  else showAuth('register')
+}
+
+onMounted(() => {
+  checkApi()
+  restoreSession()
+  const token = new URLSearchParams(window.location.search).get('token')
+  if (token) {
+    resetToken.value = token
+    showAuth('reset')
+  }
+})
 </script>
 
 <template>
@@ -123,8 +267,11 @@ onMounted(checkApi)
             <span class="status-pip" :class="`status-pip--${apiState}`"></span>
             {{ statusLabel }}
           </UBadge>
-          <UButton color="neutral" variant="outline" size="md" @click="scrollToPreview">
-            Open your inbox
+          <UButton v-if="currentUser" color="neutral" variant="ghost" size="md" @click="logout">
+            Sign out
+          </UButton>
+          <UButton v-else color="neutral" variant="outline" size="md" @click="showAuth('login')">
+            Sign in
           </UButton>
         </template>
       </UHeader>
@@ -149,8 +296,8 @@ onMounted(checkApi)
               </p>
 
               <div class="hero-actions">
-                <UButton color="primary" size="xl" class="primary-cta" @click="scrollToPreview">
-                  Summarise my inbox
+                <UButton color="primary" size="xl" class="primary-cta" @click="primaryAction">
+                  {{ currentUser ? 'Open my daily brief' : 'Create my account' }}
                   <span aria-hidden="true">→</span>
                 </UButton>
                 <UButton
@@ -279,6 +426,52 @@ onMounted(checkApi)
           <span>© 2026 Briefly</span>
         </UContainer>
       </footer>
+
+      <dialog ref="authDialog" class="auth-dialog" @click.self="authDialog?.close()">
+        <button class="auth-close" type="button" aria-label="Close" @click="authDialog?.close()">×</button>
+        <div class="auth-brand">
+          <span class="brand-mark" aria-hidden="true">
+            <span></span><span></span><span></span><span></span>
+          </span>
+        </div>
+        <span class="overline">Your Briefly account</span>
+        <h2>{{ authTitle }}</h2>
+        <p class="auth-description">{{ authDescription }}</p>
+
+        <form class="auth-form" @submit.prevent="submitAuth">
+          <label v-if="authView !== 'reset'">
+            <span>Email address</span>
+            <input v-model="authEmail" type="email" autocomplete="email" required />
+          </label>
+          <label v-if="authView !== 'forgot'">
+            <span>{{ authView === 'reset' ? 'New password' : 'Password' }}</span>
+            <input
+              v-model="authPassword"
+              type="password"
+              :autocomplete="authView === 'login' ? 'current-password' : 'new-password'"
+              :minlength="authView === 'login' ? undefined : 12"
+              required
+            />
+            <small v-if="authView !== 'login'">At least 12 characters</small>
+          </label>
+
+          <div v-if="authError" class="auth-notice auth-notice--error" role="alert">{{ authError }}</div>
+          <div v-if="authMessage" class="auth-notice auth-notice--success" role="status">{{ authMessage }}</div>
+
+          <button class="auth-submit" type="submit" :disabled="authBusy">
+            {{ authBusy ? 'Please wait…' : authView === 'login' ? 'Sign in' : authView === 'register' ? 'Create account' : authView === 'forgot' ? 'Send reset link' : 'Update password' }}
+          </button>
+        </form>
+
+        <div class="auth-links">
+          <template v-if="authView === 'login'">
+            <button type="button" @click="switchAuth('forgot')">Forgot password?</button>
+            <button type="button" @click="switchAuth('register')">Create an account</button>
+          </template>
+          <button v-else-if="authView !== 'reset'" type="button" @click="switchAuth('login')">Back to sign in</button>
+          <button v-else type="button" @click="switchAuth('login')">Cancel and sign in</button>
+        </div>
+      </dialog>
     </div>
   </UApp>
 </template>
