@@ -1,0 +1,1 @@
+-- Initial schema placeholder; there are no schema changes to revert.

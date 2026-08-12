@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"email-summary-tool/database/migrations"
 	"email-summary-tool/routes"
 	"log"
 	"os"
@@ -12,7 +13,7 @@ import (
 
 type Server struct {
 	e  *echo.Echo
-	Db *pgxpool.Pool
+	DB *pgxpool.Pool
 }
 
 func NewServer() *Server {
@@ -32,9 +33,14 @@ func NewServer() *Server {
 		log.Fatalf("Unable to connect to database: %v", err)
 	}
 
+	if err := migrations.Up(dbpool); err != nil {
+		dbpool.Close()
+		log.Fatalf("Unable to apply database migrations: %v", err)
+	}
+
 	routes.InitializeRoutes(e)
 
-	return &Server{e: e, Db: dbpool}
+	return &Server{e: e, DB: dbpool}
 }
 
 func (s *Server) Start(address string) error {
@@ -42,5 +48,5 @@ func (s *Server) Start(address string) error {
 }
 
 func (s *Server) Close() {
-	s.Db.Close()
+	s.DB.Close()
 }

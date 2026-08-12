@@ -77,8 +77,10 @@ Create an empty up/down migration pair:
 docker compose exec api go run -tags pgx5 github.com/golang-migrate/migrate/v4/cmd/migrate create -ext sql -dir database/migrations/sql -seq -digits 6 migration_name
 ```
 
-Migration files live in `database/migrations/sql`. The API does not run them
-automatically; applying or rolling back migrations must be done explicitly.
+Migration files live in `database/migrations/sql`. When the API starts, it
+compares those files with the version stored in the database's `migrations`
+table and applies every pending up migration in order. If a migration fails,
+the API exits instead of serving against an outdated schema.
 
 Run the frontend type checker:
 
