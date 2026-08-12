@@ -74,13 +74,30 @@ docker compose exec api go test ./...
 Create an empty up/down migration pair:
 
 ```sh
-docker compose exec api go run -tags pgx5 github.com/golang-migrate/migrate/v4/cmd/migrate create -ext sql -dir database/migrations/sql -seq -digits 6 migration_name
+make migration NAME=migration_name
 ```
 
-Migration files live in `database/migrations/sql`. When the API starts, it
-compares those files with the version stored in the database's `migrations`
-table and applies every pending up migration in order. If a migration fails,
-the API exits instead of serving against an outdated schema.
+This creates timestamp-versioned files, such as
+`20260812194530_add_email_index.up.sql` and its matching down migration.
+Timestamp versions let developers create migrations independently without
+coordinating the next sequence number. Commit both files in each pair.
+
+Migration files live in `database/migrations/sql`. Treat a migration as
+immutable after it has been merged or applied to a shared database: do not
+rename it, renumber it, or change its SQL. Reverse a deployed change with a new
+forward migration. If two branches still produce the same version, regenerate
+one migration with a new timestamp before merging.
+
+Merge every migration intended for a release before deploying that release.
+The database records only the latest applied version, so a lower timestamp
+merged after a higher timestamp has already been deployed will not run. In that
+case, recreate the unapplied change as a new migration with a later timestamp.
+
+When the API starts, it compares those files with the version stored in the
+database's `migrations` table and applies every pending up migration in order.
+If a migration fails, the API exits instead of serving against an outdated
+schema. In development, changes to migration SQL also trigger an API rebuild so
+the embedded migration set stays current.
 
 Run the frontend type checker:
 
