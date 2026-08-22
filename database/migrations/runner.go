@@ -2,16 +2,16 @@
 package migrations
 
 import (
+	"context"
 	"embed"
 	"errors"
 	"fmt"
 	"log"
 
 	"github.com/golang-migrate/migrate/v4"
-	pgxmigrate "github.com/golang-migrate/migrate/v4/database/pgx/v5"
+	postgresmigrate "github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jackc/pgx/v5/stdlib"
+	"github.com/uptrace/bun"
 )
 
 const (
@@ -39,25 +39,31 @@ func (migrationLogger) Verbose() bool {
 	return false
 }
 
-// New creates a migrator backed by the application's existing connection pool.
+// New creates a migrator backed by the application's Bun database.
 // The caller owns the returned migrator and must close it when finished.
-func New(pool *pgxpool.Pool) (*migrate.Migrate, error) {
+func New(db *bun.DB) (*migrate.Migrate, error) {
 	sourceDriver, err := iofs.New(migrationFiles, migrationsPath)
 	if err != nil {
 		return nil, fmt.Errorf("create migration source: %w", err)
 	}
 
-	db := stdlib.OpenDBFromPool(pool)
-	driver, err := pgxmigrate.WithInstance(db, &pgxmigrate.Config{
+	ctx := context.Background()
+	conn, err := db.DB.Conn(ctx)
+	if err != nil {
+		_ = sourceDriver.Close()
+		return nil, fmt.Errorf("get migration connection: %w", err)
+	}
+
+	driver, err := postgresmigrate.WithConnection(ctx, conn, &postgresmigrate.Config{
 		MigrationsTable: migrationsTable,
 	})
 	if err != nil {
 		_ = sourceDriver.Close()
-		_ = db.Close()
-		return nil, fmt.Errorf("create pgx migration driver: %w", err)
+		_ = conn.Close()
+		return nil, fmt.Errorf("create PostgreSQL migration driver: %w", err)
 	}
 
-	migrator, err := migrate.NewWithInstance(sourceName, sourceDriver, "pgx5", driver)
+	migrator, err := migrate.NewWithInstance(sourceName, sourceDriver, "postgres", driver)
 	if err != nil {
 		_ = sourceDriver.Close()
 		_ = driver.Close()
@@ -69,8 +75,8 @@ func New(pool *pgxpool.Pool) (*migrate.Migrate, error) {
 
 // Up compares the embedded migration versions with the version recorded in the
 // migrations table and applies every pending migration in order.
-func Up(pool *pgxpool.Pool) error {
-	migrator, err := New(pool)
+func Up(db *bun.DB) error {
+	migrator, err := New(db)
 	if err != nil {
 		return err
 	}

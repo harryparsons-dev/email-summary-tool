@@ -1,1 +1,1 @@
-{"root":["./src/main.ts","./src/App.vue"],"version":"5.9.3"}
+{"root":["./src/main.ts","./src/lib/auth.ts","./src/App.vue","./src/views/LoginView.vue","./src/views/SignupView.vue"],"version":"5.9.3"}

@@ -7,7 +7,7 @@ RUN go mod download
 
 COPY . .
 
-CMD ["go", "tool", "air", "-c", ".air.toml"]
+CMD ["go", "tool", "CompileDaemon", "-build=go build -buildvcs=false -o /tmp/email-summary-tool ./main", "-command=/tmp/email-summary-tool", "-pattern=(.+\\.go|.+\\.sql)$", "-exclude-dir=.git", "-exclude-dir=frontend", "-exclude-dir=tmp", "-polling", "-polling-interval=200", "-graceful-kill"]
 
 FROM development AS build
 
