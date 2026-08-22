@@ -2,51 +2,79 @@ package server
 
 import (
 	"context"
+	"database/sql"
+	"email-summary-tool/config"
 	"email-summary-tool/database/migrations"
-	"email-summary-tool/routes"
+	appvalidator "email-summary-tool/validator"
 	"log"
+	"net/url"
 	"os"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v5"
+	"github.com/uptrace/bun"
+	"github.com/uptrace/bun/dialect/pgdialect"
+	"github.com/uptrace/bun/driver/pgdriver"
 )
 
 type Server struct {
-	e  *echo.Echo
-	DB *pgxpool.Pool
+	E   *echo.Echo
+	DB  *bun.DB
+	JWT *config.JWTConfig
 }
 
-func NewServer() *Server {
+func NewServer(jwtConfig *config.JWTConfig) *Server {
 	e := echo.New()
+	e.Validator = appvalidator.New()
 
-	databaseURL := os.Getenv("DATABASE_URL")
-	if databaseURL == "" {
-		log.Fatal("DATABASE_URL is not set")
+	postgresUser := os.Getenv("POSTGRES_USER")
+	if postgresUser == "" {
+		log.Fatal("POSTGRES_USER is not set")
 	}
 
-	dbpool, err := pgxpool.New(context.Background(), databaseURL)
-	if err != nil {
-		log.Fatalf("Unable to create connection pool: %v", err)
+	postgresPassword := os.Getenv("POSTGRES_PASSWORD")
+	if postgresPassword == "" {
+		log.Fatal("POSTGRES_PASSWORD is not set")
 	}
 
-	if err := dbpool.Ping(context.Background()); err != nil {
+	postgresDB := os.Getenv("POSTGRES_DB")
+	if postgresDB == "" {
+		log.Fatal("POSTGRES_DB is not set")
+	}
+
+	databaseURL := (&url.URL{
+		Scheme:   "postgres",
+		User:     url.UserPassword(postgresUser, postgresPassword),
+		Host:     "postgres:5432",
+		Path:     postgresDB,
+		RawQuery: "sslmode=disable",
+	}).String()
+
+	sqlDB := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(databaseURL)))
+	db := bun.NewDB(sqlDB, pgdialect.New())
+
+	if err := db.PingContext(context.Background()); err != nil {
+		_ = db.Close()
 		log.Fatalf("Unable to connect to database: %v", err)
 	}
 
-	if err := migrations.Up(dbpool); err != nil {
-		dbpool.Close()
+	if err := migrations.Up(db); err != nil {
+		_ = db.Close()
 		log.Fatalf("Unable to apply database migrations: %v", err)
 	}
 
-	routes.InitializeRoutes(e)
-
-	return &Server{e: e, DB: dbpool}
+	return &Server{
+		E:   e,
+		DB:  db,
+		JWT: jwtConfig,
+	}
 }
 
 func (s *Server) Start(address string) error {
-	return s.e.Start(address)
+	return s.E.Start(address)
 }
 
 func (s *Server) Close() {
-	s.DB.Close()
+	if err := s.DB.Close(); err != nil {
+		log.Printf("Unable to close Bun database: %v", err)
+	}
 }

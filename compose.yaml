@@ -5,8 +5,8 @@ services:
       dockerfile: Dockerfile
       target: development
     init: true
-    environment:
-      DATABASE_URL: "host=postgres port=5432 user=${POSTGRES_USER:?Set POSTGRES_USER in .env} password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env} dbname=${POSTGRES_DB:?Set POSTGRES_DB in .env}"
+    env_file:
+      - .env
     depends_on:
       postgres:
         condition: service_healthy
@@ -41,10 +41,8 @@ services:
 
   postgres:
     image: postgres:17-alpine
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env}
-      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    env_file:
+      - .env
     ports:
       - "5434:5432"
     volumes:

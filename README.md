@@ -2,7 +2,7 @@
 
 An email-summary application under active development. The local development stack includes:
 
-- a Go API with live reload
+- a Go API rebuilt and restarted by CompileDaemon on Go or migration changes
 - a Vue/Vite frontend with hot module replacement
 - PostgreSQL 17 with persistent local storage
 
@@ -25,7 +25,9 @@ Create the local environment file:
 cp .env.example .env
 ```
 
-Open `.env` and replace the example PostgreSQL password. Then build and start the development stack:
+Open `.env` and replace the example PostgreSQL password and JWT secret. The API
+constructs its database URL from the PostgreSQL settings. Then
+build and start the development stack:
 
 ```sh
 docker compose up --build
@@ -64,6 +66,11 @@ Rebuild after changing a Dockerfile or dependency manifest:
 ```sh
 docker compose up --build
 ```
+
+During normal development, CompileDaemon polls the bind-mounted backend source
+and automatically rebuilds and restarts the API when a Go source file or SQL
+migration changes. The polling watcher works consistently with Docker Desktop
+bind mounts, including on macOS.
 
 Run the backend tests:
 
@@ -124,5 +131,6 @@ Docker Compose reads the following values from `.env`:
 | `POSTGRES_DB` | Name of the local application database |
 | `POSTGRES_USER` | PostgreSQL application user |
 | `POSTGRES_PASSWORD` | Password for the PostgreSQL user |
+| `SECRET_KEY` | Secret used to sign and verify authentication tokens |
 
 Changing these values does not update an existing PostgreSQL volume. Reset the local data volume if the database has already been initialized and the credentials need to change.
