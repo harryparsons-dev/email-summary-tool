@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { authenticate } from '../lib/auth'
+import { login } from '../services/authService'
 
 const email = ref('')
 const password = ref('')
@@ -14,7 +14,7 @@ async function submit() {
   isSubmitting.value = true
 
   try {
-    await authenticate('/login', {
+    await login({
       email: email.value.trim(),
       password: password.value,
     })

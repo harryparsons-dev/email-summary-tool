@@ -1,2 +1,3 @@
 -- Initial schema placeholder. Add schema changes in later migrations so
 -- databases that have already recorded version 1 stay consistent.
+SELECT 1;

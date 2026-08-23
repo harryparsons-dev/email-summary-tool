@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { authenticate } from '../lib/auth'
+import { login, signup } from '../services/authService'
 
 const email = ref('')
 const password = ref('')
@@ -27,8 +27,8 @@ async function submit() {
 
   try {
     const credentials = { email: email.value.trim(), password: password.value }
-    await authenticate('/signup', credentials)
-    await authenticate('/login', credentials)
+    await signup(credentials)
+    await login(credentials)
     isComplete.value = true
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : 'Unable to create your account.'

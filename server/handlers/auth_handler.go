@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"email-summary-tool/database/models"
 	"email-summary-tool/server"
+	tokenservice "email-summary-tool/services/tokenService"
 	"errors"
 	"log"
 	"net/http"
@@ -13,12 +14,14 @@ import (
 )
 
 type AuthHandler struct {
-	server *server.Server
+	server       *server.Server
+	tokenService *tokenservice.TokenService
 }
 
-func NewAuthHandler(server *server.Server) *AuthHandler {
+func NewAuthHandler(server *server.Server, tokenService *tokenservice.TokenService) *AuthHandler {
 	return &AuthHandler{
-		server: server,
+		server:       server,
+		tokenService: tokenService,
 	}
 }
 
@@ -93,8 +96,8 @@ func (h *AuthHandler) Login(c *echo.Context) error {
 		return c.String(http.StatusInternalServerError, "Error logining in user")
 	}
 
-	h.setAccessCookie(c, accessToken)
-	h.setRefreshCookie(c, refreshToken)
+	h.tokenService.SetAccessCookie(c, accessToken)
+	h.tokenService.SetRefreshCookie(c, refreshToken)
 
 	return c.String(http.StatusOK, "Logined in successfully")
 }
@@ -130,31 +133,13 @@ func (h *AuthHandler) Refresh(c *echo.Context) error {
 		return c.String(http.StatusInternalServerError, "Error refreshing token")
 	}
 
-	h.setAccessCookie(c, accessToken)
+	h.tokenService.SetAccessCookie(c, accessToken)
 
 	return c.String(http.StatusOK, "Token refreshed successfully")
 }
 
-func (h *AuthHandler) setAccessCookie(c *echo.Context, token string) {
-	c.SetCookie(&http.Cookie{
-		Name:     "Authorization",
-		Value:    token,
-		MaxAge:   h.server.JWT.AccessCookieMaxAge(),
-		Path:     "/",
-		Secure:   false,
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-	})
-}
+func (h *AuthHandler) Logout(c *echo.Context) error {
+	h.tokenService.ClearAuthCookies(c)
 
-func (h *AuthHandler) setRefreshCookie(c *echo.Context, token string) {
-	c.SetCookie(&http.Cookie{
-		Name:     "RefreshToken",
-		Value:    token,
-		MaxAge:   h.server.JWT.RefreshCookieMaxAge(),
-		Path:     "/refresh",
-		Secure:   false,
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-	})
+	return c.String(http.StatusOK, "Signed out successfully")
 }
