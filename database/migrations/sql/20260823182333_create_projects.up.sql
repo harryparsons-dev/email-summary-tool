@@ -1,0 +1,15 @@
+CREATE TABLE projects (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL,
+
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+
+    email_address VARCHAR(255) NOT NULL,
+
+    status VARCHAR(50) NOT NULL,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMPTZ
+);

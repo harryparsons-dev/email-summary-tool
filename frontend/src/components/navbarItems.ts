@@ -23,7 +23,7 @@ export const navbarItems: NavbarItem[] = [
   },
   {
     label: 'Account',
-    to: '/profile',
+    to: '/account',
     icon: 'i-lucide-circle-user-round',
     requiresAuthentication: true,
   },

@@ -14,7 +14,7 @@ const router = createRouter({
     { path: '/', redirect: '/login' },
     { path: '/login', component: Login },
     { path: '/signup', component: Signup },
-    { path: '/profile', component: Profile },
+    { path: '/account', component: Profile },
   ],
 })
 
@@ -22,7 +22,7 @@ router.beforeEach(async (to) => {
   await restoreAuthentication()
 
   if (to.path === '/login' && isAuthenticated.value) {
-    return '/profile'
+    return '/account'
   }
 })
 

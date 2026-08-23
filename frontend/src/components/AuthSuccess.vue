@@ -12,7 +12,7 @@ defineProps<{
     </div>
     <h2 class="text-xl font-bold tracking-[-0.02em] text-stone-950 dark:text-white">{{ title }}</h2>
     <p class="mt-2 text-sm text-stone-600 dark:text-stone-400">{{ description }}</p>
-    <UButton to="/profile" color="primary" size="lg" trailing-icon="i-lucide-arrow-right" class="mt-6">
+    <UButton to="/account" color="primary" size="lg" trailing-icon="i-lucide-arrow-right" class="mt-6">
       Open account
     </UButton>
   </div>
