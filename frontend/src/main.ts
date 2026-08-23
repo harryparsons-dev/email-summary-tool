@@ -2,19 +2,28 @@ import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import ui from '@nuxt/ui/vue-plugin'
 import App from './App.vue'
-import LoginView from './views/LoginView.vue'
-import ProfileView from './views/ProfileView.vue'
-import SignupView from './views/SignupView.vue'
+import Login from './pages/Login.vue'
+import Profile from './pages/Profile.vue'
+import Signup from './pages/Signup.vue'
+import { isAuthenticated, restoreAuthentication } from './services/authService'
 import './style.css'
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', redirect: '/login' },
-    { path: '/login', component: LoginView },
-    { path: '/signup', component: SignupView },
-    { path: '/profile', component: ProfileView },
+    { path: '/login', component: Login },
+    { path: '/signup', component: Signup },
+    { path: '/profile', component: Profile },
   ],
+})
+
+router.beforeEach(async (to) => {
+  await restoreAuthentication()
+
+  if (to.path === '/login' && isAuthenticated.value) {
+    return '/profile'
+  }
 })
 
 createApp(App).use(router).use(ui).mount('#app')

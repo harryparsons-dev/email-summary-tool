@@ -1,84 +1,18 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { logout } from './services/authService'
-
-const router = useRouter()
-const isSigningOut = ref(false)
-const signOutFailed = ref(false)
-
-async function signOut() {
-  isSigningOut.value = true
-  signOutFailed.value = false
-
-  try {
-    await logout()
-    await router.push('/login')
-  } catch {
-    signOutFailed.value = true
-  } finally {
-    isSigningOut.value = false
-  }
-}
+import AppNavbar from './components/AppNavbar.vue'
 </script>
 
 <template>
   <UApp>
-    <div class="page-shell">
-      <UHeader :toggle="false" class="site-header">
-        <template #left>
-          <a class="brand" href="/" aria-label="Briefly home">
-            <span class="brand-mark" aria-hidden="true">B</span>
-            <span>Briefly</span>
-          </a>
-        </template>
+    <div
+      class="app-shell min-h-screen bg-stone-50 font-sans text-stone-950 transition-colors duration-200 dark:bg-[#0c0c0d] dark:text-stone-100 [--ui-primary:var(--color-orange-600)] dark:[--ui-primary:var(--color-orange-500)]"
+    >
+      <AppNavbar />
 
-        <template #right>
-          <nav class="auth-actions" aria-label="Account navigation">
-            <UButton
-              to="/profile"
-              color="neutral"
-              :variant="$route.path === '/profile' ? 'soft' : 'ghost'"
-              size="md"
-            >
-              Profile
-            </UButton>
-            <UButton
-              v-if="$route.path === '/profile'"
-              color="neutral"
-              variant="outline"
-              size="md"
-              :loading="isSigningOut"
-              :disabled="isSigningOut"
-              @click="signOut"
-            >
-              {{ signOutFailed ? 'Try sign out again' : 'Sign out' }}
-            </UButton>
-            <UButton
-              v-if="$route.path !== '/profile'"
-              to="/login"
-              color="neutral"
-              :variant="$route.path === '/login' ? 'soft' : 'ghost'"
-              size="md"
-            >
-              Log in
-            </UButton>
-            <UButton
-              v-if="$route.path !== '/profile'"
-              to="/signup"
-              color="primary"
-              variant="solid"
-              size="md"
-              class="signup-button"
-            >
-              Sign up
-            </UButton>
-          </nav>
-        </template>
-      </UHeader>
-
-      <main class="auth-main">
-        <RouterView />
+      <main class="min-h-[calc(100vh-4rem)] lg:min-h-screen lg:pl-66">
+        <div class="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-6xl items-center px-5 py-10 sm:px-8 lg:min-h-screen lg:px-12 lg:py-14">
+          <RouterView />
+        </div>
       </main>
     </div>
   </UApp>
