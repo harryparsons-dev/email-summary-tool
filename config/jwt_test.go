@@ -42,7 +42,7 @@ func TestJWTConfigKeepsRefreshTokenValidAfterAccessTokenExpires(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewJWTConfig() error = %v", err)
 	}
-	jwtConfig.accessLifetime = -time.Minute
+	jwtConfig.AccessLifetime = -time.Minute
 
 	accessToken, err := jwtConfig.SignAccessToken("user-123")
 	if err != nil {
@@ -104,7 +104,7 @@ func TestJWTConfigRejectsTokenWithoutExpiration(t *testing.T) {
 
 	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": "user-123",
-	}).SignedString(jwtConfig.signingKey)
+	}).SignedString(jwtConfig.SigningKey)
 	if err != nil {
 		t.Fatalf("SignedString() error = %v", err)
 	}

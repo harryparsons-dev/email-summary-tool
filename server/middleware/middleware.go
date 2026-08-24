@@ -26,7 +26,7 @@ func RequireAuth(server *server.Server) echo.MiddlewareFunc {
 
 			// get the user
 			user := &models.User{}
-			server.DB.NewSelect().Model(user).Where("id = ?", userID).Scan(c.Request().Context())
+			server.Db.NewSelect().Model(user).Where("id = ?", userID).Scan(c.Request().Context())
 			if user.ID == "" {
 				return c.JSON(http.StatusUnauthorized, map[string]string{
 					"error": "User not found",
