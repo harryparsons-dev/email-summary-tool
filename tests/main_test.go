@@ -38,7 +38,6 @@ func TestMain(m *testing.M) {
 func (ts *APITestServer) RunAll(t *testing.T, cases []pkg.TestCase) {
 	t.Helper()
 	for _, tc := range cases {
-		tc := tc
 		t.Run(tc.TestName, func(t *testing.T) {
 			ts.Run(t, tc)
 		})
@@ -81,6 +80,7 @@ func (ts *APITestServer) Run(t *testing.T, tc pkg.TestCase) {
 		t.Errorf("status code: got %d, want %d; body: %s", response.StatusCode, tc.ExpectedResult.StatusCode, responseBody)
 	}
 	assertResponseBody(t, responseBody, tc.ExpectedResult.Body)
+	assertResponseBodyDoesNotExist(t, responseBody, tc.ExpectedResult.BodyDoesNotExist)
 }
 
 func requestBody(value any) (io.Reader, error) {
@@ -124,6 +124,55 @@ func assertResponseBody(t *testing.T, actual []byte, expected any) {
 	if err := matchJSONSubset(actualJSON, expectedJSON, "body"); err != nil {
 		t.Errorf("response JSON mismatch: %v; body: %s", err, actual)
 	}
+}
+
+func assertResponseBodyDoesNotExist(t *testing.T, actual []byte, unexpected any) {
+	t.Helper()
+	if unexpected == nil {
+		return
+	}
+	if unexpectedText, ok := unexpected.(string); ok {
+		if strings.Contains(string(actual), unexpectedText) {
+			t.Errorf("response body %q contains unexpected value %q", actual, unexpectedText)
+		}
+		return
+	}
+
+	var actualJSON any
+	if err := json.Unmarshal(actual, &actualJSON); err != nil {
+		t.Errorf("response body is not valid JSON: %v; body: %s", err, actual)
+		return
+	}
+	unexpectedJSON, err := normalizeJSON(unexpected)
+	if err != nil {
+		t.Fatalf("encode unexpected response body: %v", err)
+	}
+	if containsJSONSubset(actualJSON, unexpectedJSON) {
+		t.Errorf("response JSON contains unexpected value %#v; body: %s", unexpected, actual)
+	}
+}
+
+func containsJSONSubset(actual, unexpected any) bool {
+	if matchJSONSubset(actual, unexpected, "body") == nil {
+		return true
+	}
+
+	switch actual := actual.(type) {
+	case map[string]any:
+		for _, value := range actual {
+			if containsJSONSubset(value, unexpected) {
+				return true
+			}
+		}
+	case []any:
+		for _, value := range actual {
+			if containsJSONSubset(value, unexpected) {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 func normalizeJSON(value any) (any, error) {

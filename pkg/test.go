@@ -12,6 +12,8 @@ type ExpectedResult struct {
 	// Body can be a string to match response text or a JSON-compatible value.
 	// JSON objects are subset-matched, so generated fields can be omitted.
 	Body any
+	// BodyDoesNotExist fails when a string or JSON subset appears anywhere in the response.
+	BodyDoesNotExist any
 }
 
 type TestCase struct {

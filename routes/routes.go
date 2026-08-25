@@ -31,5 +31,8 @@ func InitializeRoutes(server *server.Server) {
 
 	server.E.GET("/projects", projectHandler.List, middleware.RequireAuth(server))
 	server.E.POST("/projects", projectHandler.Create, middleware.RequireAuth(server))
+	server.E.GET("/projects/:id", projectHandler.Get, middleware.RequireAuth(server))
+	server.E.PUT("/projects/:id", projectHandler.Update, middleware.RequireAuth(server))
+	server.E.DELETE("/projects/:id", projectHandler.Delete, middleware.RequireAuth(server))
 
 }

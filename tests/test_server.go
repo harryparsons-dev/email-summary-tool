@@ -34,6 +34,7 @@ type APITestServer struct {
 	HTTPServer *httptest.Server
 	Client     *http.Client
 	AuthCookie *http.Cookie
+	User       *models.User
 }
 
 // checkTestDatabase verifies the dependency without changing Docker state.
@@ -42,7 +43,7 @@ func checkTestDatabase() error {
 	if !ok {
 		return fmt.Errorf("locate test database configuration")
 	}
-	composeFile := filepath.Clean(filepath.Join(filepath.Dir(filename), "..", "..", "compose.test.yaml"))
+	composeFile := filepath.Clean(filepath.Join(filepath.Dir(filename), "..", "compose.test.yaml"))
 
 	command := exec.Command(
 		"docker", "compose", "-f", composeFile,
@@ -120,6 +121,7 @@ func NewTestServer() (*APITestServer, error) {
 			Value: accessToken,
 			Path:  "/",
 		},
+		User: user,
 	}, nil
 }
 
