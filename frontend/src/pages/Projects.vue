@@ -303,7 +303,13 @@ onMounted(() => loadProjects())
       </div>
 
       <div v-else-if="result?.projects.length" class="divide-y divide-stone-200 dark:divide-white/10">
-        <article v-for="project in result.projects" :key="project.id" class="flex items-start gap-4 p-5 sm:p-6">
+        <RouterLink
+          v-for="project in result.projects"
+          :key="project.id"
+          :to="`/projects/${project.id}`"
+          class="group flex items-start gap-4 p-5 no-underline transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-orange-500 sm:p-6 dark:hover:bg-white/[0.025]"
+          :aria-label="`View ${project.name}`"
+        >
           <div class="grid size-10 shrink-0 place-items-center rounded-lg bg-orange-50 text-orange-700 ring-1 ring-orange-200 dark:bg-orange-500/10 dark:text-orange-300 dark:ring-orange-400/15">
             <UIcon name="i-lucide-folder-kanban" class="size-5" aria-hidden="true" />
           </div>
@@ -321,7 +327,12 @@ onMounted(() => loadProjects())
               {{ project.description || 'No description provided.' }}
             </p>
           </div>
-        </article>
+          <UIcon
+            name="i-lucide-chevron-right"
+            class="mt-3 size-4 shrink-0 text-stone-400 transition-transform group-hover:translate-x-0.5 group-hover:text-orange-600 dark:text-stone-600 dark:group-hover:text-orange-400"
+            aria-hidden="true"
+          />
+        </RouterLink>
       </div>
 
       <div v-else class="grid min-h-64 place-items-center p-8 text-center">

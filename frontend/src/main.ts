@@ -4,6 +4,7 @@ import ui from '@nuxt/ui/vue-plugin'
 import App from './App.vue'
 import Login from './pages/Login.vue'
 import Profile from './pages/Profile.vue'
+import ProjectDetail from './pages/ProjectDetail.vue'
 import Projects from './pages/Projects.vue'
 import Signup from './pages/Signup.vue'
 import { isAuthenticated, restoreAuthentication } from './services/authService'
@@ -16,6 +17,7 @@ const router = createRouter({
     { path: '/login', component: Login },
     { path: '/signup', component: Signup },
     { path: '/projects', component: Projects },
+    { path: '/projects/:id', component: ProjectDetail },
     { path: '/account', component: Profile },
   ],
 })

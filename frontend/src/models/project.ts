@@ -13,6 +13,12 @@ export interface CreateProjectInput {
   status: ProjectStatus
 }
 
+export interface UpdateProjectInput {
+  name: string
+  description: string
+  status: ProjectStatus
+}
+
 export interface PaginatedProjectResponse {
   projects: Project[]
   page: number
