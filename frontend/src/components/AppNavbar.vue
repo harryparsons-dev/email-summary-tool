@@ -32,6 +32,10 @@ const visibleNavbarItems = computed(() =>
   }),
 )
 
+function isNavigationItemActive(path: string) {
+  return route.path === path || (path === '/projects' && route.path.startsWith('/projects/'))
+}
+
 function syncViewport(event: MediaQueryListEvent) {
   isDesktop.value = event.matches
 
@@ -153,10 +157,10 @@ async function signOut() {
           :to="item.to"
           :icon="item.icon"
           color="neutral"
-          :variant="route.path === item.to ? 'soft' : 'ghost'"
+          :variant="isNavigationItemActive(item.to) ? 'soft' : 'ghost'"
           size="lg"
           class="justify-start px-3 font-medium"
-          :class="route.path === item.to ? 'nav-active' : ''"
+          :class="isNavigationItemActive(item.to) ? 'nav-active' : ''"
         >
           {{ item.label }}
         </UButton>

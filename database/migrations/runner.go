@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/golang-migrate/migrate/v4"
 	postgresmigrate "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -32,11 +33,48 @@ var migrationFiles embed.FS
 type migrationLogger struct{}
 
 func (migrationLogger) Printf(format string, args ...any) {
+	if version, name, ok := successfulUpMigration(format, args...); ok {
+		log.Printf("database migration %s ran successfully (version=%s)", name, version)
+		return
+	}
+
 	log.Printf("database migration: "+format, args...)
 }
 
 func (migrationLogger) Verbose() bool {
 	return false
+}
+
+// successfulUpMigration recognizes the completion message emitted by
+// golang-migrate after it has run an up migration and marked its version clean.
+func successfulUpMigration(format string, args ...any) (version, name string, ok bool) {
+	if len(args) == 0 {
+		return "", "", false
+	}
+
+	description, isString := args[0].(string)
+	if !isString {
+		return "", "", false
+	}
+
+	fields := strings.Fields(description)
+	if len(fields) != 2 {
+		return "", "", false
+	}
+
+	version, direction, found := strings.Cut(fields[0], "/")
+	if !found || version == "" || direction != "u" || fields[1] == "" {
+		return "", "", false
+	}
+
+	// In non-verbose mode the successful completion format is "%v (%v)".
+	// Checking it prevents unrelated library messages from being reported as a
+	// successful migration if they happen to begin with a migration identifier.
+	if strings.TrimSpace(format) != "%v (%v)" {
+		return "", "", false
+	}
+
+	return version, fields[1], true
 }
 
 // New creates a migrator backed by the application's Bun database.

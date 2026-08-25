@@ -22,8 +22,14 @@ export const navbarItems: NavbarItem[] = [
     guestOnly: true,
   },
   {
+    label: 'Projects',
+    to: '/projects',
+    icon: 'i-lucide-folder-kanban',
+    requiresAuthentication: true,
+  },
+  {
     label: 'Account',
-    to: '/profile',
+    to: '/account',
     icon: 'i-lucide-circle-user-round',
     requiresAuthentication: true,
   },
