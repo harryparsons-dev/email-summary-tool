@@ -12,6 +12,7 @@ services:
         condition: service_healthy
     ports:
       - "8080:8080"
+      - "2525:2525"
     volumes:
       - .:/app
     healthcheck:
