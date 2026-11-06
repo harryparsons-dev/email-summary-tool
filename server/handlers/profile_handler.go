@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"email-summary-tool/database/models"
+	"email-summary-tool/pkg/responses"
 	"net/http"
 
 	"github.com/labstack/echo/v5"
@@ -15,12 +16,10 @@ type profileResponse struct {
 func GetProfile(c *echo.Context) error {
 	user, ok := c.Get("user").(*models.User)
 	if !ok {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "Authenticated user is unavailable",
-		})
+		return responses.Error(c, http.StatusInternalServerError, "Authenticated user is unavailable")
 	}
 
-	return c.JSON(http.StatusOK, profileResponse{
+	return responses.Data(c, http.StatusOK, profileResponse{
 		ID:    user.ID,
 		Email: user.Email,
 	})

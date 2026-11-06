@@ -19,7 +19,7 @@ async function submit() {
       email: email.value.trim(),
       password: password.value,
     })
-    await router.push('/account')
+    await router.push('/projects')
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : 'Unable to log in.'
   } finally {

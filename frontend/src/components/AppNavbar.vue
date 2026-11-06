@@ -32,6 +32,11 @@ const visibleNavbarItems = computed(() =>
   }),
 )
 
+// Nested pages such as /projects/:id keep their section highlighted.
+function isActive(path: string) {
+  return route.path === path || route.path.startsWith(`${path}/`)
+}
+
 function syncViewport(event: MediaQueryListEvent) {
   isDesktop.value = event.matches
 
@@ -153,10 +158,10 @@ async function signOut() {
           :to="item.to"
           :icon="item.icon"
           color="neutral"
-          :variant="route.path === item.to ? 'soft' : 'ghost'"
+          :variant="isActive(item.to) ? 'soft' : 'ghost'"
           size="lg"
           class="justify-start px-3 font-medium"
-          :class="route.path === item.to ? 'nav-active' : ''"
+          :class="isActive(item.to) ? 'nav-active' : ''"
         >
           {{ item.label }}
         </UButton>

@@ -20,6 +20,9 @@
 }
 
 :root {
+  /* Set here rather than on the app shell so portalled overlays such as
+     modals and toasts pick up the brand colour too. */
+  --ui-primary: var(--color-orange-600);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
@@ -33,6 +36,10 @@ body,
 body {
   margin: 0;
   background: #fafaf9;
+}
+
+.dark {
+  --ui-primary: var(--color-orange-500);
 }
 
 html.dark body {

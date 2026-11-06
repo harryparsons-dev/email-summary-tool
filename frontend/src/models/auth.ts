@@ -4,4 +4,6 @@ export type AuthCredentials = Pick<User, 'email'> & {
   password: string
 }
 
-export type AuthResponse = string
+export type AuthResponse = {
+  message: string
+}

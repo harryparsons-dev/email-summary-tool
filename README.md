@@ -38,6 +38,7 @@ The services are available at:
 - Frontend: <http://localhost:5173>
 - API health endpoint: <http://localhost:8080>
 - PostgreSQL: `localhost:5434`
+- SMTP (inbound project mail): `localhost:2525`
 
 The `.env` file is ignored by Git. Commit changes to `.env.example` whenever a new required environment variable is introduced, but never add real credentials to it.
 
@@ -112,6 +113,24 @@ Run the frontend type checker:
 docker compose exec frontend npm run type-check
 ```
 
+## Inbound email
+
+Creating a project (`POST /projects`) generates a random address such as
+`k3x9p2qahm7d@<INBOUND_EMAIL_DOMAIN>`. The API runs its own SMTP server, which
+accepts mail only for existing project addresses and stores each message in the
+`emails` table, including the raw original. Mail for any other address is
+rejected with `550 No such mailbox`. List a project's mail with
+`GET /projects/:projectId/emails`.
+
+To test locally, create a project, then send it a message:
+
+```sh
+python3 -c 'import smtplib; smtplib.SMTP("localhost", 2525).sendmail("me@example.com", ["<project address>"], "Subject: Hello\r\n\r\nHi there")'
+```
+
+In production, point the domain's MX record at the server and forward public
+port 25 to `SMTP_ADDR`.
+
 ## Resetting local data
 
 PostgreSQL data and frontend dependencies are stored in Docker volumes and survive normal container restarts. To stop the stack and delete those volumes:
@@ -132,5 +151,7 @@ Docker Compose reads the following values from `.env`:
 | `POSTGRES_USER` | PostgreSQL application user |
 | `POSTGRES_PASSWORD` | Password for the PostgreSQL user |
 | `SECRET_KEY` | Secret used to sign and verify authentication tokens |
+| `INBOUND_EMAIL_DOMAIN` | Domain for generated project addresses (default `localhost`) |
+| `SMTP_ADDR` | Address the built-in SMTP server listens on (default `:2525`) |
 
 Changing these values does not update an existing PostgreSQL volume. Reset the local data volume if the database has already been initialized and the credentials need to change.

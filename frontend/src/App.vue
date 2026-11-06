@@ -5,7 +5,7 @@ import AppNavbar from './components/AppNavbar.vue'
 <template>
   <UApp>
     <div
-      class="app-shell min-h-screen bg-stone-50 font-sans text-stone-950 transition-colors duration-200 dark:bg-[#0c0c0d] dark:text-stone-100 [--ui-primary:var(--color-orange-600)] dark:[--ui-primary:var(--color-orange-500)]"
+      class="app-shell min-h-screen bg-stone-50 font-sans text-stone-950 transition-colors duration-200 dark:bg-[#0c0c0d] dark:text-stone-100"
     >
       <AppNavbar />
 

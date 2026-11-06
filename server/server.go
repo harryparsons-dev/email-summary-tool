@@ -20,9 +20,12 @@ type Server struct {
 	E   *echo.Echo
 	DB  *bun.DB
 	JWT *config.JWTConfig
+
+	// InboundDomain is the domain used for generated project email addresses.
+	InboundDomain string
 }
 
-func NewServer(jwtConfig *config.JWTConfig) *Server {
+func NewServer(jwtConfig *config.JWTConfig, inboundDomain string) *Server {
 	e := echo.New()
 	e.Validator = appvalidator.New()
 
@@ -66,6 +69,8 @@ func NewServer(jwtConfig *config.JWTConfig) *Server {
 		E:   e,
 		DB:  db,
 		JWT: jwtConfig,
+
+		InboundDomain: inboundDomain,
 	}
 }
 

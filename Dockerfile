@@ -22,6 +22,6 @@ RUN apk add --no-cache ca-certificates \
 COPY --from=build /email-summary-tool /usr/local/bin/email-summary-tool
 
 USER app
-EXPOSE 8080
+EXPOSE 8080 2525
 
 ENTRYPOINT ["email-summary-tool"]
