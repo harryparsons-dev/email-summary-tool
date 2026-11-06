@@ -1,30 +1,16 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
-@custom-variant dark (&:where(.dark, .dark *));
-
 @theme static {
   --font-sans: Inter, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  --color-orange-50: #fff7ed;
-  --color-orange-100: #ffedd5;
-  --color-orange-200: #fed7aa;
-  --color-orange-300: #fdba74;
-  --color-orange-400: #fb923c;
-  --color-orange-500: #f97316;
-  --color-orange-600: #ea580c;
-  --color-orange-700: #c2410c;
-  --color-orange-800: #9a3412;
-  --color-orange-900: #7c2d12;
-  --color-orange-950: #431407;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --ease-snappy: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 :root {
-  /* Set here rather than on the app shell so portalled overlays such as
-     modals and toasts pick up the brand colour too. */
-  --ui-primary: var(--color-orange-600);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 html,
@@ -35,15 +21,8 @@ body,
 
 body {
   margin: 0;
-  background: #fafaf9;
-}
-
-.dark {
-  --ui-primary: var(--color-orange-500);
-}
-
-html.dark body {
-  background: #0c0c0d;
+  background: var(--ui-bg);
+  color: var(--ui-text);
 }
 
 button,
@@ -52,22 +31,69 @@ input {
   -webkit-tap-highlight-color: transparent;
 }
 
-.nav-active {
-  color: var(--color-orange-800);
+/* Route changes: a quick fade with a small lift. */
+.page-enter-active {
+  transition:
+    opacity 160ms var(--ease-snappy),
+    transform 160ms var(--ease-snappy);
 }
 
-.dark .nav-active {
-  color: var(--color-orange-300);
+.page-leave-active {
+  transition: opacity 90ms ease-in;
 }
 
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 180ms ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
+.page-enter-from {
   opacity: 0;
+  transform: translateY(6px);
+}
+
+.page-leave-to {
+  opacity: 0;
+}
+
+/* Swapping content inside a panel (e.g. the email reader). */
+.swap-enter-active {
+  transition:
+    opacity 140ms var(--ease-snappy),
+    transform 140ms var(--ease-snappy);
+}
+
+.swap-leave-active {
+  transition: opacity 80ms ease-in;
+}
+
+.swap-enter-from {
+  opacity: 0;
+  transform: translateX(6px);
+}
+
+.swap-leave-to {
+  opacity: 0;
+}
+
+/* Lists: items rise in one after another (set --i on each item). */
+.list-enter-active {
+  transition:
+    opacity 220ms var(--ease-snappy),
+    transform 220ms var(--ease-snappy);
+  transition-delay: calc(min(var(--i, 0), 10) * 25ms);
+}
+
+.list-leave-active {
+  transition: opacity 100ms ease-in;
+}
+
+.list-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.list-leave-to {
+  opacity: 0;
+}
+
+.list-move {
+  transition: transform 200ms var(--ease-snappy);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -76,6 +102,7 @@ input {
   *::after {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }

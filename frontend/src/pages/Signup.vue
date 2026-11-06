@@ -1,33 +1,62 @@
 <script setup lang="ts">
+import type { AuthFormField, FormError, FormSubmitEvent } from '@nuxt/ui'
 import { ref } from 'vue'
-import AuthSuccess from '../components/AuthSuccess.vue'
 import { login, signup } from '../services/authService'
 
-const email = ref('')
-const password = ref('')
-const confirmPassword = ref('')
-const showPassword = ref(false)
+type SignupState = { email?: string; password?: string; confirmPassword?: string }
+
 const isSubmitting = ref(false)
 const errorMessage = ref('')
 const isComplete = ref(false)
 
-async function submit() {
+const fields: AuthFormField[] = [
+  {
+    name: 'email',
+    type: 'email',
+    label: 'Email address',
+    placeholder: 'you@example.com',
+    autocomplete: 'email',
+    icon: 'i-lucide-at-sign',
+    size: 'lg',
+    required: true,
+  },
+  {
+    name: 'password',
+    type: 'password',
+    label: 'Password',
+    description: 'Use 8 or more characters.',
+    placeholder: 'At least 8 characters',
+    autocomplete: 'new-password',
+    icon: 'i-lucide-lock-keyhole',
+    size: 'lg',
+    required: true,
+  },
+  {
+    name: 'confirmPassword',
+    type: 'password',
+    label: 'Confirm password',
+    placeholder: 'Enter your password again',
+    autocomplete: 'new-password',
+    icon: 'i-lucide-check-circle-2',
+    size: 'lg',
+    required: true,
+  },
+]
+
+function validate(state: Partial<SignupState>): FormError[] {
+  const errors: FormError[] = []
+  if (!state.email?.trim()) errors.push({ name: 'email', message: 'Enter your email address.' })
+  if ((state.password ?? '').length < 8) errors.push({ name: 'password', message: 'Password must be at least 8 characters.' })
+  if (state.confirmPassword !== state.password) errors.push({ name: 'confirmPassword', message: 'Passwords do not match.' })
+  return errors
+}
+
+async function submit(event: FormSubmitEvent<SignupState>) {
   errorMessage.value = ''
-
-  if (password.value.length < 8) {
-    errorMessage.value = 'Password must be at least 8 characters.'
-    return
-  }
-
-  if (password.value !== confirmPassword.value) {
-    errorMessage.value = 'Passwords do not match.'
-    return
-  }
-
   isSubmitting.value = true
 
   try {
-    const credentials = { email: email.value.trim(), password: password.value }
+    const credentials = { email: (event.data.email ?? '').trim(), password: event.data.password ?? '' }
     await signup(credentials)
     await login(credentials)
     isComplete.value = true
@@ -40,118 +69,54 @@ async function submit() {
 </script>
 
 <template>
-  <section class="mx-auto w-full max-w-[29rem]" aria-labelledby="signup-title">
-    <div class="mb-7">
-      <UBadge color="neutral" variant="soft" size="md" class="mb-4">New account</UBadge>
-      <h1 id="signup-title" class="text-[2rem] leading-tight font-bold tracking-[-0.035em] text-stone-950 dark:text-white">
-        Create your account
-      </h1>
-      <p class="mt-2 text-[0.95rem] leading-6 text-stone-600 dark:text-stone-400">
-        Set up your workspace credentials.
-      </p>
-    </div>
-
-    <UCard
-      variant="outline"
-      class="rounded-xl bg-white ring-stone-200 dark:bg-[#161617] dark:ring-white/10"
-      :ui="{ body: 'p-5 sm:p-7' }"
-    >
-      <AuthSuccess
-        v-if="isComplete"
-        title="Account created"
-        description="You’re logged in and ready to continue."
-      />
-
-      <form v-else class="grid gap-5" @submit.prevent="submit">
-        <UFormField label="Email address" name="email" required>
-          <UInput
-            id="signup-email"
-            v-model="email"
-            name="email"
-            type="email"
-            autocomplete="email"
-            placeholder="you@example.com"
-            icon="i-lucide-at-sign"
-            size="xl"
-            class="w-full"
-            required
-          />
-        </UFormField>
-
-        <UFormField label="Password" name="password" description="Use 8 or more characters." required>
-          <UInput
-            id="signup-password"
-            v-model="password"
-            name="password"
-            :type="showPassword ? 'text' : 'password'"
-            autocomplete="new-password"
-            placeholder="At least 8 characters"
-            icon="i-lucide-lock-keyhole"
-            minlength="8"
-            size="xl"
-            class="w-full"
-            required
-          >
-            <template #trailing>
-              <UTooltip :text="showPassword ? 'Hide passwords' : 'Show passwords'">
-                <UButton
-                  type="button"
-                  color="neutral"
-                  variant="ghost"
-                  size="xs"
-                  :icon="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-                  :aria-label="showPassword ? 'Hide passwords' : 'Show passwords'"
-                  :aria-pressed="showPassword"
-                  @click="showPassword = !showPassword"
-                />
-              </UTooltip>
-            </template>
-          </UInput>
-        </UFormField>
-
-        <UFormField label="Confirm password" name="confirm-password" required>
-          <UInput
-            id="confirm-password"
-            v-model="confirmPassword"
-            name="confirm-password"
-            :type="showPassword ? 'text' : 'password'"
-            autocomplete="new-password"
-            placeholder="Enter your password again"
-            icon="i-lucide-check-circle-2"
-            minlength="8"
-            size="xl"
-            class="w-full"
-            required
-          />
-        </UFormField>
-
-        <UAlert
-          v-if="errorMessage"
-          color="error"
-          variant="soft"
-          icon="i-lucide-circle-alert"
-          title="Check your details"
-          :description="errorMessage"
-          role="alert"
+  <div class="w-full max-w-sm">
+    <UPageCard variant="subtle" class="shadow-lg shadow-black/5">
+      <Transition name="swap" mode="out-in">
+        <UEmpty
+          v-if="isComplete"
+          icon="i-lucide-party-popper"
+          title="Account created"
+          description="You’re logged in and ready to go."
+          variant="naked"
+          :actions="[{ label: 'Open projects', to: '/projects', trailingIcon: 'i-lucide-arrow-right' }]"
+          role="status"
         />
 
-        <UButton type="submit" color="primary" size="xl" block :loading="isSubmitting" :disabled="isSubmitting">
-          {{ isSubmitting ? 'Creating account…' : 'Create account' }}
-        </UButton>
+        <UAuthForm
+          v-else
+          icon="i-lucide-user-plus"
+          title="Create your account"
+          description="Set up your Briefly workspace in seconds."
+          :fields="fields"
+          :validate="validate"
+          :loading="isSubmitting"
+          :submit="{ label: 'Create account', size: 'lg', block: true }"
+          @submit="submit"
+        >
+          <template #validation>
+            <Transition name="swap">
+              <UAlert
+                v-if="errorMessage"
+                color="error"
+                variant="subtle"
+                icon="i-lucide-circle-alert"
+                title="Check your details"
+                :description="errorMessage"
+                role="alert"
+              />
+            </Transition>
+          </template>
 
-        <p class="text-center text-xs leading-5 text-stone-500 dark:text-stone-500">
-          By continuing, you agree to the Terms of Service and Privacy Policy.
-        </p>
+          <template #footer>
+            Already registered?
+            <ULink to="/login" class="font-medium text-primary">Log in</ULink>
+          </template>
+        </UAuthForm>
+      </Transition>
+    </UPageCard>
 
-        <USeparator />
-
-        <p class="text-center text-sm text-stone-600 dark:text-stone-400">
-          Already registered?
-          <ULink to="/login" class="font-semibold text-orange-700 hover:text-orange-800 dark:text-orange-400 dark:hover:text-orange-300">
-            Log in
-          </ULink>
-        </p>
-      </form>
-    </UCard>
-  </section>
+    <p class="mt-5 text-center text-xs text-muted">
+      By continuing, you agree to the Terms of Service and Privacy Policy.
+    </p>
+  </div>
 </template>

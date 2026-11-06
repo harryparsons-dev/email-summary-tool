@@ -10,12 +10,19 @@ import Signup from './pages/Signup.vue'
 import { isAuthenticated, restoreAuthentication } from './services/authService'
 import './style.css'
 
+declare module 'vue-router' {
+  interface RouteMeta {
+    layout?: 'auth' | 'dashboard'
+    requiresAuthentication?: boolean
+  }
+}
+
 const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', redirect: '/projects' },
-    { path: '/login', component: Login },
-    { path: '/signup', component: Signup },
+    { path: '/login', component: Login, meta: { layout: 'auth' } },
+    { path: '/signup', component: Signup, meta: { layout: 'auth' } },
     { path: '/account', component: Profile, meta: { requiresAuthentication: true } },
     { path: '/projects', component: Projects, meta: { requiresAuthentication: true } },
     { path: '/projects/:id', component: ProjectDetail, meta: { requiresAuthentication: true } },
@@ -25,7 +32,7 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   await restoreAuthentication()
 
-  if (to.path === '/login' && isAuthenticated.value) {
+  if (to.meta.layout === 'auth' && isAuthenticated.value) {
     return '/projects'
   }
 

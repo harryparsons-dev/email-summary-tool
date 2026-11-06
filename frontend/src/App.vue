@@ -1,19 +1,36 @@
 <script setup lang="ts">
-import AppNavbar from './components/AppNavbar.vue'
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import AppSidebar from './components/AppSidebar.vue'
+
+const route = useRoute()
+const isAuthLayout = computed(() => route.meta.layout === 'auth')
 </script>
 
 <template>
-  <UApp>
-    <div
-      class="app-shell min-h-screen bg-stone-50 font-sans text-stone-950 transition-colors duration-200 dark:bg-[#0c0c0d] dark:text-stone-100"
-    >
-      <AppNavbar />
-
-      <main class="min-h-[calc(100vh-4rem)] lg:min-h-screen lg:pl-66">
-        <div class="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-6xl items-center px-5 py-10 sm:px-8 lg:min-h-screen lg:px-12 lg:py-14">
-          <RouterView />
-        </div>
-      </main>
+  <UApp :toaster="{ position: 'bottom-right', duration: 3000 }">
+    <div v-if="isAuthLayout" class="relative grid min-h-svh place-items-center overflow-hidden px-4 py-12">
+      <div
+        class="pointer-events-none absolute inset-0 bg-[radial-gradient(60rem_30rem_at_50%_-10%,color-mix(in_oklab,var(--ui-primary)_16%,transparent),transparent)]"
+        aria-hidden="true"
+      />
+      <RouterView v-slot="{ Component }">
+        <Transition name="page" mode="out-in">
+          <component :is="Component" :key="route.path" class="relative" />
+        </Transition>
+      </RouterView>
     </div>
+
+    <UDashboardGroup v-else unit="rem" storage-key="briefly-dashboard">
+      <AppSidebar />
+
+      <RouterView v-slot="{ Component }">
+        <Transition name="page" mode="out-in">
+          <div :key="route.path" class="flex min-w-0 flex-1">
+            <component :is="Component" />
+          </div>
+        </Transition>
+      </RouterView>
+    </UDashboardGroup>
   </UApp>
 </template>
