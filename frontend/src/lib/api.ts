@@ -55,7 +55,9 @@ export async function apiRequest<TResponse, TBody = never>(
   if (!response.ok) {
     const message = isApiErrorResponse(responseBody)
       ? responseBody.error
-      : responseText || defaultErrorMessage
+      : typeof responseBody === 'string' && responseBody
+        ? responseBody
+        : responseText || defaultErrorMessage
 
     throw new Error(message)
   }

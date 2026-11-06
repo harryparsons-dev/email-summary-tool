@@ -20,9 +20,9 @@ const (
 // private prevents handlers and middleware from retaining their own direct
 // references to it.
 type JWTConfig struct {
-	signingKey      []byte
-	accessLifetime  time.Duration
-	refreshLifetime time.Duration
+	SigningKey      []byte
+	AccessLifetime  time.Duration
+	RefreshLifetime time.Duration
 }
 
 type jwtClaims struct {
@@ -37,18 +37,18 @@ func NewJWTConfig(secret string) (*JWTConfig, error) {
 	}
 
 	return &JWTConfig{
-		signingKey:      []byte(secret),
-		accessLifetime:  defaultAccessLifetime,
-		refreshLifetime: defaultRefreshLifetime,
+		SigningKey:      []byte(secret),
+		AccessLifetime:  defaultAccessLifetime,
+		RefreshLifetime: defaultRefreshLifetime,
 	}, nil
 }
 
 func (c *JWTConfig) SignAccessToken(userID string) (string, error) {
-	return c.signToken(userID, accessTokenType, c.accessLifetime)
+	return c.signToken(userID, accessTokenType, c.AccessLifetime)
 }
 
 func (c *JWTConfig) SignRefreshToken(userID string) (string, error) {
-	return c.signToken(userID, refreshTokenType, c.refreshLifetime)
+	return c.signToken(userID, refreshTokenType, c.RefreshLifetime)
 }
 
 func (c *JWTConfig) signToken(userID, tokenType string, lifetime time.Duration) (string, error) {
@@ -66,7 +66,7 @@ func (c *JWTConfig) signToken(userID, tokenType string, lifetime time.Duration) 
 		},
 	})
 
-	return token.SignedString(c.signingKey)
+	return token.SignedString(c.SigningKey)
 }
 
 func (c *JWTConfig) VerifyAccessToken(tokenString string) (string, error) {
@@ -83,7 +83,7 @@ func (c *JWTConfig) verifyToken(tokenString, expectedType string) (string, error
 		tokenString,
 		claims,
 		func(_ *jwt.Token) (any, error) {
-			return c.signingKey, nil
+			return c.SigningKey, nil
 		},
 		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}),
 		jwt.WithExpirationRequired(),
@@ -99,9 +99,9 @@ func (c *JWTConfig) verifyToken(tokenString, expectedType string) (string, error
 }
 
 func (c *JWTConfig) AccessCookieMaxAge() int {
-	return int(c.accessLifetime / time.Second)
+	return int(c.AccessLifetime / time.Second)
 }
 
 func (c *JWTConfig) RefreshCookieMaxAge() int {
-	return int(c.refreshLifetime / time.Second)
+	return int(c.RefreshLifetime / time.Second)
 }

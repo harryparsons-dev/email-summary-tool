@@ -18,7 +18,7 @@ const router = createRouter({
     { path: '/signup', component: Signup },
     { path: '/account', component: Profile, meta: { requiresAuthentication: true } },
     { path: '/projects', component: Projects, meta: { requiresAuthentication: true } },
-    { path: '/projects/:projectId', component: ProjectDetail, meta: { requiresAuthentication: true } },
+    { path: '/projects/:id', component: ProjectDetail, meta: { requiresAuthentication: true } },
   ],
 })
 

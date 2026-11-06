@@ -9,10 +9,11 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
 )
 
-// ProjectEmailHandler serves the /projects/:projectId/emails resource.
+// ProjectEmailHandler serves the /projects/:id/emails resource.
 type ProjectEmailHandler struct {
 	Server *server.Server
 }
@@ -31,13 +32,17 @@ func (h *ProjectEmailHandler) List(c *echo.Context) error {
 		return responses.Error(c, http.StatusInternalServerError, "Authenticated user is unavailable")
 	}
 
+	projectID := c.Param("id")
+	if _, err := uuid.Parse(projectID); err != nil {
+		return responses.Error(c, http.StatusNotFound, "Project not found")
+	}
+
 	ctx := c.Request().Context()
 	project := &models.Project{}
-	err := h.Server.DB.NewSelect().
+	err := h.Server.Db.NewSelect().
 		Model(project).
-		Where("id = ?", c.Param("projectId")).
+		Where("id = ?", projectID).
 		Where("user_id = ?", user.ID).
-		Where("deleted_at IS NULL").
 		Scan(ctx)
 	if errors.Is(err, sql.ErrNoRows) {
 		return responses.Error(c, http.StatusNotFound, "Project not found")
@@ -48,7 +53,7 @@ func (h *ProjectEmailHandler) List(c *echo.Context) error {
 	}
 
 	emails := []models.Email{}
-	err = h.Server.DB.NewSelect().
+	err = h.Server.Db.NewSelect().
 		Model(&emails).
 		ExcludeColumn("raw_message").
 		Where("project_id = ?", project.ID).

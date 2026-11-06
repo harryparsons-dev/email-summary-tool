@@ -1,15 +1,28 @@
+export type ProjectStatus = 'pending' | 'in_progress' | 'completed' | 'archived'
+
 export interface Project {
   id: string
-  user_id: string
-  title: string
+  name: string
   description: string
+  status: ProjectStatus
   email_address: string
-  status: string
-  created_at: string
-  updated_at: string
 }
 
-export interface CreateProjectRequest {
-  title: string
-  description?: string
+export interface CreateProjectInput {
+  name: string
+  description: string
+  status: ProjectStatus
+}
+
+export interface UpdateProjectInput {
+  name: string
+  description: string
+  status: ProjectStatus
+}
+
+export interface PaginatedProjectResponse {
+  projects: Project[]
+  page: number
+  page_size: number
+  total: number
 }

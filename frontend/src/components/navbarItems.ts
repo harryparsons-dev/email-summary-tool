@@ -24,7 +24,7 @@ export const navbarItems: NavbarItem[] = [
   {
     label: 'Projects',
     to: '/projects',
-    icon: 'i-lucide-folder-open',
+    icon: 'i-lucide-folder-kanban',
     requiresAuthentication: true,
   },
   {

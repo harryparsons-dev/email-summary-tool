@@ -1,13 +1,21 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"email-summary-tool/config"
+	"email-summary-tool/database/migrations"
 	"email-summary-tool/mailserver"
 	"email-summary-tool/routes"
 	"email-summary-tool/server"
 	"email-summary-tool/services/inbound"
 	"log"
+	"net/url"
 	"os"
+
+	"github.com/uptrace/bun"
+	"github.com/uptrace/bun/dialect/pgdialect"
+	"github.com/uptrace/bun/driver/pgdriver"
 )
 
 func main() {
@@ -19,12 +27,48 @@ func main() {
 	inboundDomain := envOrDefault("INBOUND_EMAIL_DOMAIN", "localhost")
 	smtpAddr := envOrDefault("SMTP_ADDR", ":2525")
 
-	s := server.NewServer(jwtConfig, inboundDomain)
+	postgresUser := os.Getenv("POSTGRES_USER")
+	if postgresUser == "" {
+		log.Fatal("POSTGRES_USER is not set")
+	}
+
+	postgresPassword := os.Getenv("POSTGRES_PASSWORD")
+	if postgresPassword == "" {
+		log.Fatal("POSTGRES_PASSWORD is not set")
+	}
+
+	postgresDB := os.Getenv("POSTGRES_DB")
+	if postgresDB == "" {
+		log.Fatal("POSTGRES_DB is not set")
+	}
+
+	databaseURL := (&url.URL{
+		Scheme:   "postgres",
+		User:     url.UserPassword(postgresUser, postgresPassword),
+		Host:     "postgres:5432",
+		Path:     postgresDB,
+		RawQuery: "sslmode=disable",
+	}).String()
+
+	sqlDB := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(databaseURL)))
+	db := bun.NewDB(sqlDB, pgdialect.New())
+
+	if err := db.PingContext(context.Background()); err != nil {
+		_ = db.Close()
+		log.Fatalf("Unable to connect to database: %v", err)
+	}
+
+	if err := migrations.Up(db); err != nil {
+		_ = db.Close()
+		log.Fatalf("Unable to apply database migrations: %v", err)
+	}
+
+	s := server.NewServer(jwtConfig, db, inboundDomain)
 	defer s.Close()
 
 	routes.InitializeRoutes(s)
 
-	smtpServer := mailserver.New(smtpAddr, inboundDomain, inbound.NewStore(s.DB, inboundDomain))
+	smtpServer := mailserver.New(smtpAddr, inboundDomain, inbound.NewStore(s.Db, inboundDomain))
 	defer smtpServer.Close()
 	go func() {
 		log.Printf("SMTP server accepting mail for @%s on %s", inboundDomain, smtpAddr)

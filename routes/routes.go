@@ -29,8 +29,10 @@ func InitializeRoutes(server *server.Server) {
 	server.E.GET("/refresh", authHandler.Refresh)
 	server.E.GET("/profile", handlers.GetProfile, requireAuth)
 
-	server.E.POST("/projects", projectHandler.Create, requireAuth)
 	server.E.GET("/projects", projectHandler.List, requireAuth)
-	server.E.GET("/projects/:projectId", projectHandler.Get, requireAuth)
-	server.E.GET("/projects/:projectId/emails", projectEmailHandler.List, requireAuth)
+	server.E.POST("/projects", projectHandler.Create, requireAuth)
+	server.E.GET("/projects/:id", projectHandler.Get, requireAuth)
+	server.E.PUT("/projects/:id", projectHandler.Update, requireAuth)
+	server.E.DELETE("/projects/:id", projectHandler.Delete, requireAuth)
+	server.E.GET("/projects/:id/emails", projectEmailHandler.List, requireAuth)
 }

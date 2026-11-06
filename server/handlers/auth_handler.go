@@ -39,7 +39,7 @@ func (h *AuthHandler) SignUp(c *echo.Context) error {
 	}
 
 	existingUser := &models.User{}
-	h.server.DB.NewSelect().Model(&models.User{}).Where("email = ?", request.Email).Scan(c.Request().Context(), existingUser)
+	h.server.Db.NewSelect().Model(&models.User{}).Where("email = ?", request.Email).Scan(c.Request().Context(), existingUser)
 	if existingUser.ID != "" {
 		return responses.Error(c, http.StatusBadRequest, "User with this email already exists")
 	}
@@ -53,7 +53,7 @@ func (h *AuthHandler) SignUp(c *echo.Context) error {
 		Email:        request.Email,
 		PasswordHash: string(hash),
 	}
-	if _, err := h.server.DB.NewInsert().Model(user).Exec(c.Request().Context()); err != nil {
+	if _, err := h.server.Db.NewInsert().Model(user).Exec(c.Request().Context()); err != nil {
 		return responses.Error(c, http.StatusInternalServerError, "Error signing up user")
 	}
 
@@ -73,7 +73,7 @@ func (h *AuthHandler) Login(c *echo.Context) error {
 	}
 
 	user := &models.User{}
-	h.server.DB.NewSelect().Model(&models.User{}).Where("email = ?", request.Email).Scan(c.Request().Context(), user)
+	h.server.Db.NewSelect().Model(&models.User{}).Where("email = ?", request.Email).Scan(c.Request().Context(), user)
 	if user.ID == "" {
 		return responses.Error(c, http.StatusUnauthorized, "Invalid email or password")
 	}
@@ -111,7 +111,7 @@ func (h *AuthHandler) Refresh(c *echo.Context) error {
 	}
 
 	user := &models.User{}
-	err = h.server.DB.NewSelect().Model(user).Where("id = ?", userID).Scan(c.Request().Context())
+	err = h.server.Db.NewSelect().Model(user).Where("id = ?", userID).Scan(c.Request().Context())
 	if errors.Is(err, sql.ErrNoRows) {
 		return responses.Error(c, http.StatusUnauthorized, "User not found")
 	}
