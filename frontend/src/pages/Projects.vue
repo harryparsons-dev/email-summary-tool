@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useToast } from '@nuxt/ui/composables'
 import { onMounted, ref } from 'vue'
+import AppBreadcrumb from '../components/AppBreadcrumb.vue'
 import CopyButton from '../components/CopyButton.vue'
 import ProjectForm from '../components/ProjectForm.vue'
 import { getStatusDetails } from '../lib/projectStatus'
@@ -77,9 +78,9 @@ onMounted(() => loadProjects())
 <template>
   <UDashboardPanel id="projects">
     <template #header>
-      <UDashboardNavbar title="Projects">
-        <template #leading>
-          <UDashboardSidebarCollapse />
+      <UDashboardNavbar>
+        <template #title>
+          <AppBreadcrumb :items="[{ label: 'Projects' }]" />
         </template>
         <template #trailing>
           <Transition name="swap">
@@ -137,10 +138,8 @@ onMounted(() => loadProjects())
             :title="project.name"
             :description="project.description || 'No description provided.'"
             variant="outline"
-            spotlight
-            spotlight-color="primary"
             :style="{ '--i': index }"
-            class="group transition-transform duration-150 ease-out hover:-translate-y-0.5"
+            class="group"
             :ui="{ container: 'h-full', wrapper: 'h-full', description: 'line-clamp-2', footer: 'mt-auto w-full pt-4' }"
           >
             <template #header>

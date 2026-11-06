@@ -61,12 +61,12 @@ onMounted(async () => {
     :ui="{ footer: 'border-t border-default' }"
   >
     <template #header="{ collapsed }">
-      <RouterLink to="/projects" class="flex min-w-0 items-center gap-2.5" aria-label="Briefly home">
+      <!-- When collapsed there is only room for one button, so the logo makes way for the expand button. -->
+      <RouterLink v-if="!collapsed" to="/projects" class="flex min-w-0 items-center gap-2.5" aria-label="Briefly home">
         <UAvatar icon="i-lucide-mail" size="sm" :ui="{ root: 'bg-primary', icon: 'text-inverted' }" />
-        <Transition name="page">
-          <span v-if="!collapsed" class="truncate font-semibold text-highlighted">Briefly</span>
-        </Transition>
+        <span class="truncate font-semibold text-highlighted">Briefly</span>
       </RouterLink>
+      <UDashboardSidebarCollapse :class="collapsed ? 'mx-auto' : 'ms-auto'" />
     </template>
 
     <template #default="{ collapsed }">

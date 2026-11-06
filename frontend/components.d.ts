@@ -11,9 +11,8 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    AppNavbar: typeof import('./src/components/AppNavbar.vue')['default']
+    AppBreadcrumb: typeof import('./src/components/AppBreadcrumb.vue')['default']
     AppSidebar: typeof import('./src/components/AppSidebar.vue')['default']
-    AuthSuccess: typeof import('./src/components/AuthSuccess.vue')['default']
     CopyButton: typeof import('./src/components/CopyButton.vue')['default']
     EmailReader: typeof import('./src/components/EmailReader.vue')['default']
     ProjectForm: typeof import('./src/components/ProjectForm.vue')['default']
@@ -24,8 +23,8 @@ declare module 'vue' {
     UAuthForm: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/AuthForm.vue')['default']
     UAvatar: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Avatar.vue')['default']
     UBadge: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Badge.vue')['default']
+    UBreadcrumb: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Breadcrumb.vue')['default']
     UButton: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Button.vue')['default']
-    UCard: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Card.vue')['default']
     UColorModeButton: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/color-mode/ColorModeButton.vue')['default']
     UColorModeSelect: typeof import('./node_modules/@nuxt/ui/dist/runtime/vue/components/color-mode/ColorModeSelect.vue')['default']
     UDashboardGroup: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/DashboardGroup.vue')['default']
@@ -48,7 +47,6 @@ declare module 'vue' {
     USeparator: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Separator.vue')['default']
     USkeleton: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Skeleton.vue')['default']
     USlideover: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Slideover.vue')['default']
-    USwitch: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Switch.vue')['default']
     UTabs: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Tabs.vue')['default']
     UTextarea: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Textarea.vue')['default']
     UTooltip: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Tooltip.vue')['default']

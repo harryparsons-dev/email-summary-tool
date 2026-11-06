@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import type { DropdownMenuItem } from '@nuxt/ui'
+import type { BreadcrumbItem, DropdownMenuItem } from '@nuxt/ui'
 import { useToast } from '@nuxt/ui/composables'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import AppBreadcrumb from '../components/AppBreadcrumb.vue'
 import CopyButton from '../components/CopyButton.vue'
 import EmailReader from '../components/EmailReader.vue'
 import ProjectForm from '../components/ProjectForm.vue'
@@ -56,6 +57,11 @@ const isReaderOpen = computed({
     if (!open) selectedId.value = null
   },
 })
+
+const breadcrumbItems = computed<BreadcrumbItem[]>(() => [
+  { label: 'Projects', to: '/projects' },
+  { label: project.value?.name ?? 'Project' },
+])
 
 const projectMenu = computed<DropdownMenuItem[][]>(() => [
   [{ label: 'Edit project', icon: 'i-lucide-pencil', onSelect: openEdit }],
@@ -179,13 +185,11 @@ onBeforeUnmount(() => {
     <template #header>
       <UDashboardNavbar :ui="{ title: 'min-w-0' }">
         <template #leading>
-          <UDashboardSidebarCollapse />
-          <UButton to="/projects" icon="i-lucide-arrow-left" color="neutral" variant="ghost" aria-label="Back to projects" class="lg:hidden" />
+          <UButton to="/projects" icon="i-lucide-arrow-left" color="neutral" variant="ghost" aria-label="Back to projects" />
         </template>
 
         <template #title>
-          <USkeleton v-if="isLoading" class="h-5 w-32" />
-          <span v-else class="truncate">{{ project?.name ?? 'Project' }}</span>
+          <AppBreadcrumb :items="breadcrumbItems" :loading="isLoading" />
         </template>
 
         <template #right>

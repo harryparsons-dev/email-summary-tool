@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import AppBreadcrumb from '../components/AppBreadcrumb.vue'
 import CopyButton from '../components/CopyButton.vue'
 import type { User } from '../models/user'
 import { getProfile } from '../services/profileService'
@@ -27,9 +28,9 @@ onMounted(loadProfile)
 <template>
   <UDashboardPanel id="account">
     <template #header>
-      <UDashboardNavbar title="Account">
-        <template #leading>
-          <UDashboardSidebarCollapse />
+      <UDashboardNavbar>
+        <template #title>
+          <AppBreadcrumb :items="[{ label: 'Account' }]" />
         </template>
       </UDashboardNavbar>
     </template>
