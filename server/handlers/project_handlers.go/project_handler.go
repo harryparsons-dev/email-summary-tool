@@ -37,11 +37,15 @@ func (h *ProjectHandler) List(c *echo.Context) error {
 	page, pageSize, pagniation := pkg.Paginate(c)
 
 	var projects []models.Project
-	h.Server.Db.NewSelect().
+	err := h.Server.Db.NewSelect().
 		Model(&projects).
 		Where("user_id = ?", user.ID).
 		Apply(pagniation).
 		Scan(ctx)
+	if err != nil {
+		log.Printf("Unexpected error listing projects: %v", err)
+		return responses.Error(c, http.StatusInternalServerError, "Failed to list projects")
+	}
 
 	totalCount, err := h.Server.Db.NewSelect().
 		Model(&models.Project{}).

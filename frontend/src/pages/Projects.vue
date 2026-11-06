@@ -49,6 +49,11 @@ const statusDetails: Record<ProjectStatus, { label: string; color: 'neutral' | '
   archived: { label: 'Archived', color: 'neutral' },
 }
 
+// Rows written before the current status set (e.g. 'active') must still render.
+function getStatusDetails(status: string) {
+  return statusDetails[status as ProjectStatus] ?? { label: status, color: 'neutral' as const }
+}
+
 async function loadProjects(page = requestedPage.value) {
   isLoading.value = true
   errorMessage.value = ''
@@ -320,8 +325,8 @@ onMounted(() => loadProjects())
               <h2 class="truncate text-sm font-semibold text-stone-950 dark:text-white">
                 {{ project.name }}
               </h2>
-              <UBadge :color="statusDetails[project.status].color" variant="subtle" size="sm">
-                {{ statusDetails[project.status].label }}
+              <UBadge :color="getStatusDetails(project.status).color" variant="subtle" size="sm">
+                {{ getStatusDetails(project.status).label }}
               </UBadge>
             </div>
             <p class="mt-1.5 line-clamp-2 text-sm leading-5 text-stone-600 dark:text-stone-400">

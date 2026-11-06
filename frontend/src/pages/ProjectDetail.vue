@@ -47,6 +47,11 @@ const statusDetails: Record<ProjectStatus, { label: string; color: 'neutral' | '
   archived: { label: 'Archived', color: 'neutral' },
 }
 
+// Rows written before the current status set (e.g. 'active') must still render.
+function getStatusDetails(status: string) {
+  return statusDetails[status as ProjectStatus] ?? { label: status, color: 'neutral' as const }
+}
+
 const selectedEmail = computed(() => emails.value.find((email) => email.id === selectedId.value) ?? null)
 
 function snippet(email: Email): string {
@@ -222,8 +227,8 @@ onBeforeUnmount(() => clearInterval(refreshTimer))
             <h1 id="project-title" class="text-[2rem] leading-tight font-bold tracking-[-0.035em] text-stone-950 dark:text-white">
               {{ project.name }}
             </h1>
-            <UBadge :color="statusDetails[project.status].color" variant="subtle" size="md">
-              {{ statusDetails[project.status].label }}
+            <UBadge :color="getStatusDetails(project.status).color" variant="subtle" size="md">
+              {{ getStatusDetails(project.status).label }}
             </UBadge>
           </div>
           <p v-if="project.description" class="mt-2 max-w-2xl text-[0.95rem] leading-6 text-stone-600 dark:text-stone-400">
