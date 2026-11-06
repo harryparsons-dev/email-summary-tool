@@ -36,7 +36,6 @@ func (s *Store) FindProjectID(ctx context.Context, address string) (projectID st
 		Model(project).
 		Column("id").
 		Where("email_address = ?", address).
-		Where("deleted_at IS NULL").
 		Limit(1).
 		Scan(ctx)
 	if errors.Is(err, sql.ErrNoRows) {

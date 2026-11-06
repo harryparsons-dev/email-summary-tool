@@ -464,6 +464,14 @@ func TestProjectsDelete(t *testing.T) {
 		t.Errorf("get deleted project error = %v, want %v", err, sql.ErrNoRows)
 	}
 
+	softDeletedProject := &models.Project{}
+	if err := TestServer.Db.NewSelect().Model(softDeletedProject).WhereDeleted().Where("id = ?", project.ID).Scan(t.Context()); err != nil {
+		t.Fatalf("get soft-deleted project: %v", err)
+	}
+	if softDeletedProject.DeletedAt.IsZero() {
+		t.Errorf("deleted project has no deleted_at; want a soft delete")
+	}
+
 	persistedOtherProject := &models.Project{}
 	if err := TestServer.Db.NewSelect().Model(persistedOtherProject).Where("id = ?", otherProject.ID).Scan(t.Context()); err != nil {
 		t.Fatalf("get other user's project after delete request: %v", err)

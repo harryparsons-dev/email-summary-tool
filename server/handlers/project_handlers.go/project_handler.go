@@ -9,9 +9,10 @@ import (
 
 	"email-summary-tool/database/models"
 	"email-summary-tool/pkg"
+	"email-summary-tool/pkg/responses"
 	"email-summary-tool/server"
 	"email-summary-tool/server/requests"
-	"email-summary-tool/server/responses"
+	projectresponses "email-summary-tool/server/responses"
 	"email-summary-tool/services/inbound"
 
 	"github.com/google/uuid"
@@ -50,14 +51,14 @@ func (h *ProjectHandler) List(c *echo.Context) error {
 		totalCount = 0
 	}
 
-	response := responses.NewPaginatedProjectResponse(projects, page, pageSize, int(totalCount))
-	return c.JSON(http.StatusOK, response)
+	response := projectresponses.NewPaginatedProjectResponse(projects, page, pageSize, int(totalCount))
+	return responses.Data(c, http.StatusOK, response)
 }
 
 func (h *ProjectHandler) Get(c *echo.Context) error {
 	projectID := c.Param("id")
 	if _, err := uuid.Parse(projectID); err != nil {
-		return c.JSON(http.StatusNotFound, "Project not found")
+		return responses.Error(c, http.StatusNotFound, "Project not found")
 	}
 
 	user := c.Get("user").(*models.User)
@@ -68,14 +69,14 @@ func (h *ProjectHandler) Get(c *echo.Context) error {
 		Where("user_id = ?", user.ID).
 		Scan(c.Request().Context())
 	if errors.Is(err, sql.ErrNoRows) {
-		return c.JSON(http.StatusNotFound, "Project not found")
+		return responses.Error(c, http.StatusNotFound, "Project not found")
 	}
 	if err != nil {
 		log.Printf("Unexpected error getting project: %v", err)
-		return c.JSON(http.StatusInternalServerError, "Failed to get project")
+		return responses.Error(c, http.StatusInternalServerError, "Failed to get project")
 	}
 
-	return c.JSON(http.StatusOK, responses.NewProjectResponse(project))
+	return responses.Data(c, http.StatusOK, projectresponses.NewProjectResponse(project))
 }
 
 func (h *ProjectHandler) Create(c *echo.Context) error {
@@ -84,11 +85,11 @@ func (h *ProjectHandler) Create(c *echo.Context) error {
 
 	request := &requests.CreateProjectRequest{}
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, "Invalid request body")
+		return responses.Error(c, http.StatusBadRequest, "Invalid request body")
 	}
 
 	if !models.ValidProjectStatuses[request.Status] {
-		return c.JSON(http.StatusBadRequest, "Invalid project status")
+		return responses.Error(c, http.StatusBadRequest, "Invalid project status")
 	}
 
 	// Each project gets a newly generated inbound email address; retry on the
@@ -97,7 +98,7 @@ func (h *ProjectHandler) Create(c *echo.Context) error {
 		address, err := inbound.GenerateAddress(h.Server.InboundDomain)
 		if err != nil {
 			log.Printf("Unexpected error generating project email address: %v", err)
-			return c.JSON(http.StatusInternalServerError, "Failed to create project")
+			return responses.Error(c, http.StatusInternalServerError, "Failed to create project")
 		}
 
 		project := &models.Project{
@@ -114,33 +115,33 @@ func (h *ProjectHandler) Create(c *echo.Context) error {
 		}
 		if err != nil {
 			log.Printf("Unexpected error creating project: %v", err)
-			return c.JSON(http.StatusInternalServerError, "Failed to create project")
+			return responses.Error(c, http.StatusInternalServerError, "Failed to create project")
 		}
 
-		response := responses.NewProjectResponse(project)
-		return c.JSON(http.StatusCreated, response)
+		response := projectresponses.NewProjectResponse(project)
+		return responses.Data(c, http.StatusCreated, response)
 	}
 
 	log.Printf("Unexpected error creating project: no free email address after %d attempts", models.ProjectEmailAddressAttempts)
-	return c.JSON(http.StatusInternalServerError, "Failed to create project")
+	return responses.Error(c, http.StatusInternalServerError, "Failed to create project")
 }
 
 func (h *ProjectHandler) Update(c *echo.Context) error {
 	request := &requests.UpdateProjectRequest{}
 	if err := c.Bind(request); err != nil {
-		return c.JSON(http.StatusBadRequest, "Invalid request body")
+		return responses.Error(c, http.StatusBadRequest, "Invalid request body")
 	}
 
 	if !models.ValidProjectStatuses[request.Status] {
-		return c.JSON(http.StatusBadRequest, "Invalid project status")
+		return responses.Error(c, http.StatusBadRequest, "Invalid project status")
 	}
 	if err := request.Validate(); err != nil {
-		return c.JSON(http.StatusBadRequest, "Invalid request body")
+		return responses.Error(c, http.StatusBadRequest, "Invalid request body")
 	}
 
 	projectID := c.Param("id")
 	if _, err := uuid.Parse(projectID); err != nil {
-		return c.JSON(http.StatusNotFound, "Project not found")
+		return responses.Error(c, http.StatusNotFound, "Project not found")
 	}
 
 	user := c.Get("user").(*models.User)
@@ -151,11 +152,11 @@ func (h *ProjectHandler) Update(c *echo.Context) error {
 		Where("user_id = ?", user.ID).
 		Scan(c.Request().Context())
 	if errors.Is(err, sql.ErrNoRows) {
-		return c.JSON(http.StatusNotFound, "Project not found")
+		return responses.Error(c, http.StatusNotFound, "Project not found")
 	}
 	if err != nil {
 		log.Printf("Unexpected error getting project for update: %v", err)
-		return c.JSON(http.StatusInternalServerError, "Failed to update project")
+		return responses.Error(c, http.StatusInternalServerError, "Failed to update project")
 	}
 
 	project.Title = request.Name
@@ -171,16 +172,16 @@ func (h *ProjectHandler) Update(c *echo.Context) error {
 		Exec(c.Request().Context())
 	if err != nil {
 		log.Printf("Unexpected error updating project: %v", err)
-		return c.JSON(http.StatusInternalServerError, "Failed to update project")
+		return responses.Error(c, http.StatusInternalServerError, "Failed to update project")
 	}
 
-	return c.JSON(http.StatusOK, responses.NewProjectResponse(project))
+	return responses.Data(c, http.StatusOK, projectresponses.NewProjectResponse(project))
 }
 
 func (h *ProjectHandler) Delete(c *echo.Context) error {
 	projectID := c.Param("id")
 	if _, err := uuid.Parse(projectID); err != nil {
-		return c.JSON(http.StatusNotFound, "Project not found")
+		return responses.Error(c, http.StatusNotFound, "Project not found")
 	}
 
 	user := c.Get("user").(*models.User)
@@ -191,13 +192,15 @@ func (h *ProjectHandler) Delete(c *echo.Context) error {
 		Where("user_id = ?", user.ID).
 		Scan(c.Request().Context())
 	if errors.Is(err, sql.ErrNoRows) {
-		return c.JSON(http.StatusNotFound, "Project not found")
+		return responses.Error(c, http.StatusNotFound, "Project not found")
 	}
 	if err != nil {
 		log.Printf("Unexpected error getting project for deletion: %v", err)
-		return c.JSON(http.StatusInternalServerError, "Failed to delete project")
+		return responses.Error(c, http.StatusInternalServerError, "Failed to delete project")
 	}
 
+	// Project has a soft_delete column, so this sets deleted_at rather than
+	// removing the row; the project and its emails are kept.
 	_, err = h.Server.Db.NewDelete().
 		Model(project).
 		WherePK().
@@ -205,7 +208,7 @@ func (h *ProjectHandler) Delete(c *echo.Context) error {
 		Exec(c.Request().Context())
 	if err != nil {
 		log.Printf("Unexpected error deleting project: %v", err)
-		return c.JSON(http.StatusInternalServerError, "Failed to delete project")
+		return responses.Error(c, http.StatusInternalServerError, "Failed to delete project")
 	}
 
 	return c.NoContent(http.StatusNoContent)
