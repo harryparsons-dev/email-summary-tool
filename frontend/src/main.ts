@@ -2,12 +2,13 @@ import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import ui from '@nuxt/ui/vue-plugin'
 import App from './App.vue'
+import { setSessionHandler } from './lib/api'
 import Login from './pages/Login.vue'
 import Profile from './pages/Profile.vue'
 import ProjectDetail from './pages/ProjectDetail.vue'
 import Projects from './pages/Projects.vue'
 import Signup from './pages/Signup.vue'
-import { isAuthenticated, restoreAuthentication } from './services/authService'
+import { isAuthenticated, refresh, restoreAuthentication } from './services/authService'
 import './style.css'
 
 declare module 'vue-router' {
@@ -39,6 +40,18 @@ router.beforeEach(async (to) => {
   if (to.meta.requiresAuthentication && !isAuthenticated.value) {
     return '/login'
   }
+})
+
+// Renew the access token when a request finds it expired. If the session
+// can't be renewed, refresh has already marked the user as signed out, so
+// send them to login.
+setSessionHandler({
+  refresh,
+  expired: () => {
+    if (router.currentRoute.value.meta.requiresAuthentication) {
+      void router.push('/login')
+    }
+  },
 })
 
 createApp(App).use(router).use(ui).mount('#app')

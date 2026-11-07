@@ -1,18 +1,15 @@
 <script setup lang="ts">
 import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui'
 import { useToast } from '@nuxt/ui/composables'
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import type { User } from '../models/user'
-import { logout } from '../services/authService'
-import { getProfile } from '../services/profileService'
+import { currentUser as user, logout } from '../services/authService'
 import { navbarItems } from './navbarItems'
 
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 const open = ref(false)
-const user = ref<User | null>(null)
 
 // Nested pages such as /projects/:id keep their section highlighted.
 const items = computed<NavigationMenuItem[]>(() =>
@@ -40,14 +37,6 @@ async function signOut() {
     toast.add({ title: 'Sign out failed', description: 'Try again.', color: 'error', icon: 'i-lucide-circle-alert' })
   }
 }
-
-onMounted(async () => {
-  try {
-    user.value = await getProfile()
-  } catch {
-    // The sidebar still works without the email; the account page reports errors.
-  }
-})
 </script>
 
 <template>

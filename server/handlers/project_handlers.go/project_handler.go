@@ -60,6 +60,7 @@ func (h *ProjectHandler) List(c *echo.Context) error {
 }
 
 func (h *ProjectHandler) Get(c *echo.Context) error {
+	ctx := c.Request().Context()
 	projectID := c.Param("id")
 	if _, err := uuid.Parse(projectID); err != nil {
 		return responses.Error(c, http.StatusNotFound, "Project not found")
@@ -71,7 +72,7 @@ func (h *ProjectHandler) Get(c *echo.Context) error {
 		Model(project).
 		Where("id = ?", projectID).
 		Where("user_id = ?", user.ID).
-		Scan(c.Request().Context())
+		Scan(ctx)
 	if errors.Is(err, sql.ErrNoRows) {
 		return responses.Error(c, http.StatusNotFound, "Project not found")
 	}
@@ -131,6 +132,7 @@ func (h *ProjectHandler) Create(c *echo.Context) error {
 }
 
 func (h *ProjectHandler) Update(c *echo.Context) error {
+	ctx := c.Request().Context()
 	request := &requests.UpdateProjectRequest{}
 	if err := c.Bind(request); err != nil {
 		return responses.Error(c, http.StatusBadRequest, "Invalid request body")
@@ -154,7 +156,7 @@ func (h *ProjectHandler) Update(c *echo.Context) error {
 		Model(project).
 		Where("id = ?", projectID).
 		Where("user_id = ?", user.ID).
-		Scan(c.Request().Context())
+		Scan(ctx)
 	if errors.Is(err, sql.ErrNoRows) {
 		return responses.Error(c, http.StatusNotFound, "Project not found")
 	}
@@ -173,7 +175,7 @@ func (h *ProjectHandler) Update(c *echo.Context) error {
 		Column("title", "description", "status", "updated_at").
 		WherePK().
 		Where("user_id = ?", user.ID).
-		Exec(c.Request().Context())
+		Exec(ctx)
 	if err != nil {
 		log.Printf("Unexpected error updating project: %v", err)
 		return responses.Error(c, http.StatusInternalServerError, "Failed to update project")
@@ -183,6 +185,7 @@ func (h *ProjectHandler) Update(c *echo.Context) error {
 }
 
 func (h *ProjectHandler) Delete(c *echo.Context) error {
+	ctx := c.Request().Context()
 	projectID := c.Param("id")
 	if _, err := uuid.Parse(projectID); err != nil {
 		return responses.Error(c, http.StatusNotFound, "Project not found")
@@ -194,7 +197,7 @@ func (h *ProjectHandler) Delete(c *echo.Context) error {
 		Model(project).
 		Where("id = ?", projectID).
 		Where("user_id = ?", user.ID).
-		Scan(c.Request().Context())
+		Scan(ctx)
 	if errors.Is(err, sql.ErrNoRows) {
 		return responses.Error(c, http.StatusNotFound, "Project not found")
 	}
@@ -209,7 +212,7 @@ func (h *ProjectHandler) Delete(c *echo.Context) error {
 		Model(project).
 		WherePK().
 		Where("user_id = ?", user.ID).
-		Exec(c.Request().Context())
+		Exec(ctx)
 	if err != nil {
 		log.Printf("Unexpected error deleting project: %v", err)
 		return responses.Error(c, http.StatusInternalServerError, "Failed to delete project")

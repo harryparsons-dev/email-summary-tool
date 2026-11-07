@@ -7,6 +7,7 @@ import (
 	"email-summary-tool/database/factories"
 	"email-summary-tool/database/models"
 	"email-summary-tool/pkg"
+	"email-summary-tool/services/summary"
 
 	"github.com/google/uuid"
 )
@@ -135,7 +136,7 @@ func TestEmailSummariesCreate(t *testing.T) {
 	}
 
 	TestServer.RunAll(t, cases)
-	TestServer.Summaries.Wait()
+	TestServer.Background.Wait()
 }
 
 func TestEmailSummariesCreateReturnsPendingSummary(t *testing.T) {
@@ -193,12 +194,14 @@ func TestEmailSummariesGet(t *testing.T) {
 		t.Fatalf("create failing email fixture: %v", err)
 	}
 
+	summaries := summary.NewManager(TestServer.Db, TestServer.Summarizer)
 	for _, emailID := range []string{email.ID, failingEmail.ID} {
-		if _, _, err := TestServer.Summaries.Start(t.Context(), TestServer.User.ID, project, &emailID); err != nil {
-			t.Fatalf("start summary: %v", err)
+		emailSummary, _, err := summaries.Create(t.Context(), TestServer.User.ID, project, &emailID)
+		if err != nil {
+			t.Fatalf("create summary: %v", err)
 		}
+		summaries.Generate(emailSummary.ID, project, &emailID)
 	}
-	TestServer.Summaries.Wait()
 
 	emailSummary := latestEmailSummary(t, email.ID)
 	failedSummary := latestEmailSummary(t, failingEmail.ID)
@@ -308,12 +311,14 @@ func TestEmailSummariesList(t *testing.T) {
 		t.Fatalf("create other email fixture: %v", err)
 	}
 
+	summaries := summary.NewManager(TestServer.Db, TestServer.Summarizer)
 	for _, emailID := range []string{email.ID, otherEmail.ID} {
-		if _, _, err := TestServer.Summaries.Start(t.Context(), TestServer.User.ID, project, &emailID); err != nil {
-			t.Fatalf("start summary: %v", err)
+		emailSummary, _, err := summaries.Create(t.Context(), TestServer.User.ID, project, &emailID)
+		if err != nil {
+			t.Fatalf("create summary: %v", err)
 		}
+		summaries.Generate(emailSummary.ID, project, &emailID)
 	}
-	TestServer.Summaries.Wait()
 
 	cases := []pkg.TestCase{
 		{

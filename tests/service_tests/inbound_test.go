@@ -1,14 +1,16 @@
-package inbound
+package servicetests
 
 import (
 	"strings"
 	"testing"
+
+	"email-summary-tool/services/inbound"
 )
 
 func TestGenerateAddress(t *testing.T) {
 	seen := map[string]bool{}
 	for i := 0; i < 1000; i++ {
-		address, err := GenerateAddress("Mail.Example.com")
+		address, err := inbound.GenerateAddress("Mail.Example.com")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -16,7 +18,7 @@ func TestGenerateAddress(t *testing.T) {
 		if !ok || domain != "mail.example.com" {
 			t.Fatalf("unexpected address %q", address)
 		}
-		if len(local) != localPartLength || strings.Trim(local, localPartAlphabet) != "" {
+		if len(local) != 12 || strings.Trim(local, "abcdefghijkmnpqrstuvwxyz23456789") != "" {
 			t.Fatalf("unexpected local part %q", local)
 		}
 		if seen[address] {
@@ -27,10 +29,10 @@ func TestGenerateAddress(t *testing.T) {
 }
 
 func TestNormalizeAddress(t *testing.T) {
-	if got := NormalizeAddress(" <Abc@Example.COM> "); got != "abc@example.com" {
+	if got := inbound.NormalizeAddress(" <Abc@Example.COM> "); got != "abc@example.com" {
 		t.Fatalf("got %q", got)
 	}
-	if got := AddressDomain("a@b@example.com"); got != "example.com" {
+	if got := inbound.AddressDomain("a@b@example.com"); got != "example.com" {
 		t.Fatalf("got %q", got)
 	}
 }
@@ -70,7 +72,7 @@ aGVsbG8=
 --outer--
 `)
 
-	parsed, err := Parse(raw)
+	parsed, err := inbound.Parse(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +106,7 @@ aGVsbG8=
 }
 
 func TestParsePlainMessage(t *testing.T) {
-	parsed, err := Parse(crlf("From: a@example.com\nSubject: hi\n\nplain body\x00\n"))
+	parsed, err := inbound.Parse(crlf("From: a@example.com\nSubject: hi\n\nplain body\x00\n"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,7 +119,7 @@ func TestParsePlainMessage(t *testing.T) {
 }
 
 func TestParseGarbageKeepsGoing(t *testing.T) {
-	parsed, _ := Parse([]byte("not an email at all"))
+	parsed, _ := inbound.Parse([]byte("not an email at all"))
 	if parsed == nil {
 		t.Fatal("expected a non-nil result")
 	}

@@ -1,4 +1,4 @@
-package summary
+package servicetests
 
 import (
 	"context"
@@ -11,8 +11,17 @@ import (
 	"testing"
 
 	"email-summary-tool/database/models"
+	"email-summary-tool/services/summary"
 
 	"github.com/anthropics/anthropic-sdk-go/v2/option"
+)
+
+// These match the limits in services/summary, which are not exported.
+const (
+	summaryModel         = "claude-haiku-5-5"
+	maxBodyChars         = 100_000
+	maxProjectEmails     = 50
+	maxProjectEmailChars = 4_000
 )
 
 type capturedRequest struct {
@@ -39,7 +48,7 @@ func messageResponse(stopReason, text string) string {
 		"id":            "msg_test",
 		"type":          "message",
 		"role":          "assistant",
-		"model":         model,
+		"model":         summaryModel,
 		"stop_reason":   stopReason,
 		"stop_sequence": nil,
 		"content":       []map[string]any{{"type": "text", "text": text}},
@@ -52,9 +61,9 @@ func messageResponse(stopReason, text string) string {
 	return string(encoded)
 }
 
-// newTestService returns a service pointed at a fake API that replies with
+// newTestSummaryService returns a service pointed at a fake API that replies with
 // the given body and records the request it received.
-func newTestService(t *testing.T, status int, reply string) (*Service, *capturedRequest) {
+func newTestSummaryService(t *testing.T, status int, reply string) (*summary.Service, *capturedRequest) {
 	t.Helper()
 	captured := &capturedRequest{}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -68,7 +77,7 @@ func newTestService(t *testing.T, status int, reply string) (*Service, *captured
 	}))
 	t.Cleanup(server.Close)
 
-	return NewService(
+	return summary.NewService(
 		option.WithBaseURL(server.URL),
 		option.WithAPIKey("test-key"),
 		option.WithMaxRetries(0),
@@ -87,7 +96,7 @@ func testEmail() *models.Email {
 }
 
 func TestSummarizeSendsEmailAndReturnsSummary(t *testing.T) {
-	service, captured := newTestService(t, http.StatusOK, messageResponse("end_turn", "  Jane asks you to pay invoice 42 by Friday. "))
+	service, captured := newTestSummaryService(t, http.StatusOK, messageResponse("end_turn", "  Jane asks you to pay invoice 42 by Friday. "))
 
 	result, err := service.Summarize(context.Background(), testEmail())
 	if err != nil {
@@ -125,7 +134,7 @@ func TestSummarizeFailures(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			service, _ := newTestService(t, tt.status, tt.reply)
+			service, _ := newTestSummaryService(t, tt.status, tt.reply)
 			if _, err := service.Summarize(context.Background(), testEmail()); err == nil {
 				t.Fatal("expected an error")
 			}
@@ -134,16 +143,16 @@ func TestSummarizeFailures(t *testing.T) {
 }
 
 func TestSummarizeRejectsEmptyEmail(t *testing.T) {
-	service, _ := newTestService(t, http.StatusOK, messageResponse("end_turn", "unused"))
+	service, _ := newTestSummaryService(t, http.StatusOK, messageResponse("end_turn", "unused"))
 
 	_, err := service.Summarize(context.Background(), &models.Email{HTMLBody: "<p> </p>"})
-	if !errors.Is(err, ErrEmptyEmail) {
+	if !errors.Is(err, summary.ErrEmptyEmail) {
 		t.Fatalf("err = %v", err)
 	}
 }
 
 func TestSummarizeTruncatesLongBodies(t *testing.T) {
-	service, captured := newTestService(t, http.StatusOK, messageResponse("end_turn", "Long email."))
+	service, captured := newTestSummaryService(t, http.StatusOK, messageResponse("end_turn", "Long email."))
 	email := testEmail()
 	email.TextBody = strings.Repeat("a", maxBodyChars+500)
 
@@ -163,22 +172,26 @@ func TestSummarizeTruncatesLongBodies(t *testing.T) {
 	}
 }
 
-func TestEmailBodyFallsBackToHTML(t *testing.T) {
+func TestSummarizeFallsBackToHTMLBody(t *testing.T) {
+	service, captured := newTestSummaryService(t, http.StatusOK, messageResponse("end_turn", "Welcome email."))
 	email := &models.Email{
 		HTMLBody: `<html><head><style>p{color:red}</style></head><body><p>Hello &amp; welcome</p><script>alert(1)</script><p>Second</p></body></html>`,
 	}
 
-	got := emailBody(email)
+	if _, err := service.Summarize(context.Background(), email); err != nil {
+		t.Fatal(err)
+	}
+	got := captured.userText()
 	if !strings.Contains(got, "Hello & welcome") || !strings.Contains(got, "Second") {
 		t.Errorf("missing text: %q", got)
 	}
-	if strings.Contains(got, "color:red") || strings.Contains(got, "alert") || strings.Contains(got, "<") {
+	if strings.Contains(got, "color:red") || strings.Contains(got, "alert") || strings.Contains(got, "<p>") {
 		t.Errorf("markup left in text: %q", got)
 	}
 }
 
 func TestSummarizeProject(t *testing.T) {
-	service, captured := newTestService(t, http.StatusOK, messageResponse("end_turn", "Two invoices are due."))
+	service, captured := newTestSummaryService(t, http.StatusOK, messageResponse("end_turn", "Two invoices are due."))
 	project := &models.Project{Title: "Billing", Description: "Supplier invoices"}
 	second := testEmail()
 	second.Subject = "Second invoice"
@@ -199,7 +212,7 @@ func TestSummarizeProject(t *testing.T) {
 }
 
 func TestSummarizeProjectLimitsEmails(t *testing.T) {
-	service, captured := newTestService(t, http.StatusOK, messageResponse("end_turn", "Lots of mail."))
+	service, captured := newTestSummaryService(t, http.StatusOK, messageResponse("end_turn", "Lots of mail."))
 	emails := make([]models.Email, maxProjectEmails+1)
 	for i := range emails {
 		emails[i] = *testEmail()
@@ -223,10 +236,10 @@ func TestSummarizeProjectLimitsEmails(t *testing.T) {
 }
 
 func TestSummarizeProjectRejectsNoEmails(t *testing.T) {
-	service, _ := newTestService(t, http.StatusOK, messageResponse("end_turn", "unused"))
+	service, _ := newTestSummaryService(t, http.StatusOK, messageResponse("end_turn", "unused"))
 
 	_, err := service.SummarizeProject(context.Background(), &models.Project{Title: "Empty"}, nil)
-	if !errors.Is(err, ErrNoEmails) {
+	if !errors.Is(err, summary.ErrNoEmails) {
 		t.Fatalf("err = %v", err)
 	}
 }

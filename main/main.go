@@ -71,11 +71,12 @@ func main() {
 	s := server.NewServer(jwtConfig, db, inboundDomain, summary.NewService())
 	defer s.Close()
 
-	if err := s.Summaries.FailInterrupted(context.Background()); err != nil {
+	if err := summary.NewManager(s.Db, s.Summarizer).FailInterrupted(context.Background()); err != nil {
 		log.Printf("Unable to clean up interrupted summaries: %v", err)
 	}
 
 	routes.InitializeRoutes(s)
+	routes.InitializeRestrictedRoutes(s)
 
 	smtpServer := mailserver.New(smtpAddr, inboundDomain, inbound.NewStore(s.Db, inboundDomain))
 	defer smtpServer.Close()

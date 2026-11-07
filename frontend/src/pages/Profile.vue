@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import AppBreadcrumb from '../components/AppBreadcrumb.vue'
 import CopyButton from '../components/CopyButton.vue'
-import type { User } from '../models/user'
-import { getProfile } from '../services/profileService'
+import { currentUser as user, refresh } from '../services/authService'
 
-const user = ref<User | null>(null)
-const isLoading = ref(true)
+// The user is loaded by refresh when the app starts or after login, so it is
+// normally already here. If it is missing, Try again refreshes the session.
+const isLoading = ref(false)
 const errorMessage = ref('')
 
 async function loadProfile() {
@@ -14,15 +14,13 @@ async function loadProfile() {
   errorMessage.value = ''
 
   try {
-    user.value = await getProfile()
+    await refresh()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : 'Unable to load your profile.'
   } finally {
     isLoading.value = false
   }
 }
-
-onMounted(loadProfile)
 </script>
 
 <template>
@@ -52,13 +50,13 @@ onMounted(loadProfile)
           </UPageCard>
 
           <UAlert
-            v-else-if="errorMessage"
+            v-else-if="errorMessage || !user"
             key="error"
             color="error"
             variant="subtle"
             icon="i-lucide-cloud-off"
             title="We couldn’t load your account"
-            :description="errorMessage"
+            :description="errorMessage || 'Your account details are not available.'"
             :actions="[{ label: 'Try again', icon: 'i-lucide-refresh-cw', color: 'error', variant: 'outline', onClick: loadProfile }]"
             role="alert"
           />

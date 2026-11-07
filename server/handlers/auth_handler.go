@@ -5,6 +5,7 @@ import (
 	"email-summary-tool/database/models"
 	"email-summary-tool/pkg/responses"
 	"email-summary-tool/server"
+	userresponses "email-summary-tool/server/responses"
 	tokenservice "email-summary-tool/services/tokenService"
 	"errors"
 	"log"
@@ -19,14 +20,15 @@ type AuthHandler struct {
 	tokenService *tokenservice.TokenService
 }
 
-func NewAuthHandler(server *server.Server, tokenService *tokenservice.TokenService) *AuthHandler {
+func NewAuthHandler(server *server.Server) *AuthHandler {
 	return &AuthHandler{
 		server:       server,
-		tokenService: tokenService,
+		tokenService: tokenservice.NewTokenService(server.JWT),
 	}
 }
 
 func (h *AuthHandler) SignUp(c *echo.Context) error {
+	ctx := c.Request().Context()
 	var request struct {
 		Email    string `json:"email" form:"email" validate:"required"`
 		Password string `json:"password" form:"password" validate:"required"`
@@ -39,7 +41,7 @@ func (h *AuthHandler) SignUp(c *echo.Context) error {
 	}
 
 	existingUser := &models.User{}
-	h.server.Db.NewSelect().Model(&models.User{}).Where("email = ?", request.Email).Scan(c.Request().Context(), existingUser)
+	h.server.Db.NewSelect().Model(&models.User{}).Where("email = ?", request.Email).Scan(ctx, existingUser)
 	if existingUser.ID != "" {
 		return responses.Error(c, http.StatusBadRequest, "User with this email already exists")
 	}
@@ -53,7 +55,7 @@ func (h *AuthHandler) SignUp(c *echo.Context) error {
 		Email:        request.Email,
 		PasswordHash: string(hash),
 	}
-	if _, err := h.server.Db.NewInsert().Model(user).Exec(c.Request().Context()); err != nil {
+	if _, err := h.server.Db.NewInsert().Model(user).Exec(ctx); err != nil {
 		return responses.Error(c, http.StatusInternalServerError, "Error signing up user")
 	}
 
@@ -61,6 +63,7 @@ func (h *AuthHandler) SignUp(c *echo.Context) error {
 }
 
 func (h *AuthHandler) Login(c *echo.Context) error {
+	ctx := c.Request().Context()
 	var request struct {
 		Email    string `json:"email" form:"email" validate:"required"`
 		Password string `json:"password" form:"password" validate:"required"`
@@ -73,7 +76,7 @@ func (h *AuthHandler) Login(c *echo.Context) error {
 	}
 
 	user := &models.User{}
-	h.server.Db.NewSelect().Model(&models.User{}).Where("email = ?", request.Email).Scan(c.Request().Context(), user)
+	h.server.Db.NewSelect().Model(&models.User{}).Where("email = ?", request.Email).Scan(ctx, user)
 	if user.ID == "" {
 		return responses.Error(c, http.StatusUnauthorized, "Invalid email or password")
 	}
@@ -100,6 +103,7 @@ func (h *AuthHandler) Login(c *echo.Context) error {
 }
 
 func (h *AuthHandler) Refresh(c *echo.Context) error {
+	ctx := c.Request().Context()
 	cookie, err := c.Request().Cookie("RefreshToken")
 	if err != nil {
 		return responses.Error(c, http.StatusUnauthorized, "Refresh token required")
@@ -111,7 +115,7 @@ func (h *AuthHandler) Refresh(c *echo.Context) error {
 	}
 
 	user := &models.User{}
-	err = h.server.Db.NewSelect().Model(user).Where("id = ?", userID).Scan(c.Request().Context())
+	err = h.server.Db.NewSelect().Model(user).Where("id = ?", userID).Scan(ctx)
 	if errors.Is(err, sql.ErrNoRows) {
 		return responses.Error(c, http.StatusUnauthorized, "User not found")
 	}
@@ -128,7 +132,7 @@ func (h *AuthHandler) Refresh(c *echo.Context) error {
 
 	h.tokenService.SetAccessCookie(c, accessToken)
 
-	return responses.Success(c, http.StatusOK, "Token refreshed successfully")
+	return responses.Data(c, http.StatusOK, userresponses.NewUserResponse(user))
 }
 
 func (h *AuthHandler) Logout(c *echo.Context) error {

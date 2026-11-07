@@ -4,9 +4,6 @@ import (
 	"email-summary-tool/pkg/responses"
 	"email-summary-tool/server"
 	"email-summary-tool/server/handlers"
-	projecthandlers "email-summary-tool/server/handlers/project_handlers.go"
-	"email-summary-tool/server/middleware"
-	tokenservice "email-summary-tool/services/tokenService"
 	"net/http"
 
 	"github.com/labstack/echo/v5"
@@ -14,12 +11,7 @@ import (
 
 func InitializeRoutes(server *server.Server) {
 
-	tokenService := tokenservice.NewTokenService(server.JWT)
-	authHandler := handlers.NewAuthHandler(server, tokenService)
-	projectHandler := projecthandlers.NewProjectHandler(server)
-	projectEmailHandler := projecthandlers.NewProjectEmailHandler(server)
-	projectEmailSummaryHandler := projecthandlers.NewProjectEmailSummaryHandler(server)
-	requireAuth := middleware.RequireAuth(server)
+	authHandler := handlers.NewAuthHandler(server)
 
 	server.E.GET("/", func(c *echo.Context) error {
 		return responses.Success(c, http.StatusOK, "email summary server is running")
@@ -28,15 +20,5 @@ func InitializeRoutes(server *server.Server) {
 	server.E.POST("/login", authHandler.Login)
 	server.E.POST("/logout", authHandler.Logout)
 	server.E.GET("/refresh", authHandler.Refresh)
-	server.E.GET("/profile", handlers.GetProfile, requireAuth)
 
-	server.E.GET("/projects", projectHandler.List, requireAuth)
-	server.E.POST("/projects", projectHandler.Create, requireAuth)
-	server.E.GET("/projects/:id", projectHandler.Get, requireAuth)
-	server.E.PUT("/projects/:id", projectHandler.Update, requireAuth)
-	server.E.DELETE("/projects/:id", projectHandler.Delete, requireAuth)
-	server.E.GET("/projects/:id/emails", projectEmailHandler.List, requireAuth)
-	server.E.GET("/projects/:id/emails/:emailId/summarise", projectEmailSummaryHandler.List, requireAuth)
-	server.E.POST("/projects/:id/emails/:emailId/summarise", projectEmailSummaryHandler.Create, requireAuth)
-	server.E.GET("/projects/:id/emails/:emailId/summarise/:summaryId", projectEmailSummaryHandler.Get, requireAuth)
 }

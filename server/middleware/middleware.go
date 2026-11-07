@@ -12,6 +12,7 @@ import (
 func RequireAuth(server *server.Server) echo.MiddlewareFunc {
 	return echo.MiddlewareFunc(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c *echo.Context) error {
+			ctx := c.Request().Context()
 
 			cookie, err := c.Request().Cookie("Authorization")
 			if err != nil {
@@ -25,7 +26,7 @@ func RequireAuth(server *server.Server) echo.MiddlewareFunc {
 
 			// get the user
 			user := &models.User{}
-			server.Db.NewSelect().Model(user).Where("id = ?", userID).Scan(c.Request().Context())
+			server.Db.NewSelect().Model(user).Where("id = ?", userID).Scan(ctx)
 			if user.ID == "" {
 				return responses.Error(c, http.StatusUnauthorized, "User not found")
 			}

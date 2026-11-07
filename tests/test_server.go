@@ -95,6 +95,7 @@ func NewTestServer() (*APITestServer, error) {
 	}
 	s := server.NewServer(jwtConfig, db, "example.com", fakeSummarizer{})
 	routes.InitializeRoutes(s)
+	routes.InitializeRestrictedRoutes(s)
 
 	user := &models.User{
 		Email:        testUserEmail,

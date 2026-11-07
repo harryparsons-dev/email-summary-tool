@@ -10,6 +10,7 @@ import (
 	"email-summary-tool/pkg/responses"
 	"email-summary-tool/server"
 	projectresponses "email-summary-tool/server/responses"
+	"email-summary-tool/services/summary"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
@@ -20,12 +21,14 @@ const emailSummaryListLimit = 50
 // ProjectEmailSummaryHandler serves the
 // /projects/:id/emails/:emailId/summarise resource.
 type ProjectEmailSummaryHandler struct {
-	Server *server.Server
+	Server    *server.Server
+	Summaries *summary.Manager
 }
 
 func NewProjectEmailSummaryHandler(s *server.Server) *ProjectEmailSummaryHandler {
 	return &ProjectEmailSummaryHandler{
-		Server: s,
+		Server:    s,
+		Summaries: summary.NewManager(s.Db, s.Summarizer),
 	}
 }
 
@@ -173,14 +176,20 @@ func (h *ProjectEmailSummaryHandler) Create(c *echo.Context) error {
 		return responses.Error(c, http.StatusNotFound, "Email not found")
 	}
 
-	summary, created, err := h.Server.Summaries.Start(ctx, user.ID, project, &emailID)
+	emailSummary, created, err := h.Summaries.Create(ctx, user.ID, project, &emailID)
 	if err != nil {
 		log.Printf("Error starting email summary: %v", err)
 		return responses.Error(c, http.StatusInternalServerError, "Failed to create summary")
 	}
 	if !created {
-		return responses.Data(c, http.StatusOK, projectresponses.NewSummaryResponse(summary))
+		return responses.Data(c, http.StatusOK, projectresponses.NewSummaryResponse(emailSummary))
 	}
 
-	return responses.Data(c, http.StatusAccepted, projectresponses.NewSummaryResponse(summary))
+	h.Server.Background.Add()
+	go func() {
+		defer h.Server.Background.Done()
+		h.Summaries.Generate(emailSummary.ID, project, &emailID)
+	}()
+
+	return responses.Data(c, http.StatusAccepted, projectresponses.NewSummaryResponse(emailSummary))
 }

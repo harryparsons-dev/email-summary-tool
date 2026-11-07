@@ -1,7 +1,8 @@
-package tokenservice
+package servicetests
 
 import (
 	"email-summary-tool/config"
+	tokenservice "email-summary-tool/services/tokenService"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -22,8 +23,8 @@ func TestTokenServiceSetsAuthenticationCookies(t *testing.T) {
 		t.Fatalf("got %d cookies, want 2", len(cookies))
 	}
 
-	assertCookie(t, cookies[0], accessCookieName, "access-token", 15*60)
-	assertCookie(t, cookies[1], refreshCookieName, "refresh-token", 7*24*60*60)
+	assertCookie(t, cookies[0], "Authorization", "access-token", 15*60)
+	assertCookie(t, cookies[1], "RefreshToken", "refresh-token", 7*24*60*60)
 }
 
 func TestTokenServiceClearsAuthenticationCookies(t *testing.T) {
@@ -48,7 +49,7 @@ func TestTokenServiceClearsAuthenticationCookies(t *testing.T) {
 	}
 }
 
-func newTestTokenService(t *testing.T) *TokenService {
+func newTestTokenService(t *testing.T) *tokenservice.TokenService {
 	t.Helper()
 
 	jwtConfig, err := config.NewJWTConfig("a-test-secret-that-is-at-least-32-characters")
@@ -56,7 +57,7 @@ func newTestTokenService(t *testing.T) *TokenService {
 		t.Fatalf("NewJWTConfig() error = %v", err)
 	}
 
-	return NewTokenService(jwtConfig)
+	return tokenservice.NewTokenService(jwtConfig)
 }
 
 func assertCookie(t *testing.T, cookie *http.Cookie, name, value string, maxAge int) {

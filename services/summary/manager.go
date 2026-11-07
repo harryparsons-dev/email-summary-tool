@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"sync"
 	"time"
 
 	"email-summary-tool/database/models"
@@ -29,21 +28,21 @@ type Summarizer interface {
 	SummarizeProject(ctx context.Context, project *models.Project, emails []models.Email) (*Result, error)
 }
 
-// Manager stores summaries and generates them in the background.
+// Manager stores summaries and generates their text.
 type Manager struct {
 	db         *bun.DB
 	summarizer Summarizer
-	wg         sync.WaitGroup
 }
 
 func NewManager(db *bun.DB, summarizer Summarizer) *Manager {
 	return &Manager{db: db, summarizer: summarizer}
 }
 
-// Start saves a pending summary and generates it in a background goroutine.
-// emailID nil means the whole project is summarised. If a matching summary is
-// already pending, that one is returned instead and created is false.
-func (m *Manager) Start(ctx context.Context, userID string, project *models.Project, emailID *string) (summary *models.Summary, created bool, err error) {
+// Create saves a pending summary. The caller then runs Generate, usually in a
+// background goroutine. emailID nil means the whole project is summarised. If
+// a matching summary is already pending, that one is returned instead and
+// created is false.
+func (m *Manager) Create(ctx context.Context, userID string, project *models.Project, emailID *string) (summary *models.Summary, created bool, err error) {
 	existing := &models.Summary{}
 	query := m.db.NewSelect().
 		Model(existing).
@@ -75,15 +74,7 @@ func (m *Manager) Start(ctx context.Context, userID string, project *models.Proj
 		return nil, false, fmt.Errorf("create summary: %w", err)
 	}
 
-	m.wg.Add(1)
-	go m.run(summary.ID, project, emailID)
-
 	return summary, true, nil
-}
-
-// Wait blocks until every background summary has finished.
-func (m *Manager) Wait() {
-	m.wg.Wait()
 }
 
 // FailInterrupted marks summaries still pending from a previous run of the
@@ -102,11 +93,11 @@ func (m *Manager) FailInterrupted(ctx context.Context) error {
 	return nil
 }
 
-func (m *Manager) run(summaryID string, project *models.Project, emailID *string) {
-	defer m.wg.Done()
-
-	// The request that started this job has already returned, so it gets its
-	// own context.
+// Generate creates the text for a pending summary and saves the outcome. It
+// is meant to run in a background goroutine after the request that created
+// the summary has returned, so it uses its own context rather than the
+// request's.
+func (m *Manager) Generate(summaryID string, project *models.Project, emailID *string) {
 	ctx, cancel := context.WithTimeout(context.Background(), jobTimeout)
 	defer cancel()
 
