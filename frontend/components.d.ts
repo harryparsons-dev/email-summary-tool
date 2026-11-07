@@ -20,6 +20,7 @@ declare module 'vue' {
     ProjectForm: typeof import('./src/components/ProjectForm.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SummaryPanel: typeof import('./src/components/SummaryPanel.vue')['default']
     UAlert: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/Alert.vue')['default']
     UApp: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/App.vue')['default']
     UAuthForm: typeof import('./node_modules/@nuxt/ui/dist/runtime/components/AuthForm.vue')['default']

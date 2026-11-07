@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { formatBytes, formatDateTime, formatRelative } from '../lib/format'
 import type { Email } from '../models/email'
+import SummaryPanel from './SummaryPanel.vue'
 
 const props = defineProps<{
   email: Email
@@ -74,6 +75,13 @@ const senderInitial = computed(() => (props.email.from_name || props.email.from_
         </UBadge>
       </div>
     </header>
+
+    <SummaryPanel
+      :project-id="email.project_id"
+      :email-id="email.id"
+      title="AI summary"
+      empty-text="Get a short AI summary of this email."
+    />
 
     <div v-if="hasHtml" class="flex flex-wrap items-center justify-between gap-2">
       <UTabs

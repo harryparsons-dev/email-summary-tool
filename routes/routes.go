@@ -18,6 +18,7 @@ func InitializeRoutes(server *server.Server) {
 	authHandler := handlers.NewAuthHandler(server, tokenService)
 	projectHandler := projecthandlers.NewProjectHandler(server)
 	projectEmailHandler := projecthandlers.NewProjectEmailHandler(server)
+	projectEmailSummaryHandler := projecthandlers.NewProjectEmailSummaryHandler(server)
 	requireAuth := middleware.RequireAuth(server)
 
 	server.E.GET("/", func(c *echo.Context) error {
@@ -35,4 +36,7 @@ func InitializeRoutes(server *server.Server) {
 	server.E.PUT("/projects/:id", projectHandler.Update, requireAuth)
 	server.E.DELETE("/projects/:id", projectHandler.Delete, requireAuth)
 	server.E.GET("/projects/:id/emails", projectEmailHandler.List, requireAuth)
+	server.E.GET("/projects/:id/emails/:emailId/summarise", projectEmailSummaryHandler.List, requireAuth)
+	server.E.POST("/projects/:id/emails/:emailId/summarise", projectEmailSummaryHandler.Create, requireAuth)
+	server.E.GET("/projects/:id/emails/:emailId/summarise/:summaryId", projectEmailSummaryHandler.Get, requireAuth)
 }

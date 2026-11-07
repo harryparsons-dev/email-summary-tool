@@ -93,7 +93,7 @@ func NewTestServer() (*APITestServer, error) {
 		AccessLifetime:  time.Hour,
 		RefreshLifetime: time.Hour,
 	}
-	s := server.NewServer(jwtConfig, db, "example.com")
+	s := server.NewServer(jwtConfig, db, "example.com", fakeSummarizer{})
 	routes.InitializeRoutes(s)
 
 	user := &models.User{

@@ -24,6 +24,7 @@
 
 - Format changed Go files with `gofmt` and follow the existing package boundaries and Echo handler patterns.
 - Keep request validation in request/validator types, persistence concerns in models or services, and HTTP response handling in handlers.
+- Handler files contain only the handler type, its `New...Handler` constructor, and the REST methods `List`, `Get`, `Create`, `Update`, and `Delete`. Never add helper functions or other methods to handlers; write shared steps such as loading the project inline in each method, even when this duplicates code.
 - In the frontend, use Vue single-file components with TypeScript and reuse the existing service and model layers for API access and types.
 - Keep changes focused. Do not reformat generated frontend declaration files or unrelated code.
 - Never commit `.env`, credentials, access tokens, or real user data. Update `.env.example` when a required environment variable changes.

@@ -2,6 +2,7 @@ package server
 
 import (
 	"email-summary-tool/config"
+	"email-summary-tool/services/summary"
 	appvalidator "email-summary-tool/validator"
 	"log"
 
@@ -16,9 +17,12 @@ type Server struct {
 
 	// InboundDomain is the domain used for generated project email addresses.
 	InboundDomain string
+
+	// Summaries creates AI summaries and generates them in the background.
+	Summaries *summary.Manager
 }
 
-func NewServer(jwtConfig *config.JWTConfig, db *bun.DB, inboundDomain string) *Server {
+func NewServer(jwtConfig *config.JWTConfig, db *bun.DB, inboundDomain string, summarizer summary.Summarizer) *Server {
 	e := echo.New()
 	e.Validator = appvalidator.New()
 
@@ -28,6 +32,8 @@ func NewServer(jwtConfig *config.JWTConfig, db *bun.DB, inboundDomain string) *S
 		JWT: jwtConfig,
 
 		InboundDomain: inboundDomain,
+
+		Summaries: summary.NewManager(db, summarizer),
 	}
 }
 

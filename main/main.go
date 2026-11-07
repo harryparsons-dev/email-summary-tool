@@ -9,6 +9,7 @@ import (
 	"email-summary-tool/routes"
 	"email-summary-tool/server"
 	"email-summary-tool/services/inbound"
+	"email-summary-tool/services/summary"
 	"log"
 	"net/url"
 	"os"
@@ -63,8 +64,16 @@ func main() {
 		log.Fatalf("Unable to apply database migrations: %v", err)
 	}
 
-	s := server.NewServer(jwtConfig, db, inboundDomain)
+	if os.Getenv("ANTHROPIC_API_KEY") == "" {
+		log.Print("ANTHROPIC_API_KEY is not set; AI summaries will fail until it is")
+	}
+
+	s := server.NewServer(jwtConfig, db, inboundDomain, summary.NewService())
 	defer s.Close()
+
+	if err := s.Summaries.FailInterrupted(context.Background()); err != nil {
+		log.Printf("Unable to clean up interrupted summaries: %v", err)
+	}
 
 	routes.InitializeRoutes(s)
 
