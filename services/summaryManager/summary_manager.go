@@ -144,7 +144,7 @@ func (m *SummaryManager) generate(ctx context.Context, project *models.Project, 
 		if err != nil {
 			return nil, fmt.Errorf("load email: %w", err)
 		}
-		return m.Server.Summarizer.Summarize(ctx, email)
+		return m.Server.Dependencies.Summarizer.Summarize(ctx, email)
 	}
 
 	emails := []models.Email{}
@@ -158,7 +158,7 @@ func (m *SummaryManager) generate(ctx context.Context, project *models.Project, 
 	if err != nil {
 		return nil, fmt.Errorf("load project emails: %w", err)
 	}
-	return m.Server.Summarizer.SummarizeProject(ctx, project, emails)
+	return m.Server.Dependencies.Summarizer.SummarizeProject(ctx, project, emails)
 }
 
 // failureMessage turns an error into text that is safe to show the user.

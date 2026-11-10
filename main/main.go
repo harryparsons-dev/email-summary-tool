@@ -8,6 +8,7 @@ import (
 	"email-summary-tool/pkg/mailserver"
 	"email-summary-tool/routes"
 	"email-summary-tool/server"
+	"email-summary-tool/services"
 	"email-summary-tool/services/inbound"
 	"email-summary-tool/services/summary"
 	summarymanager "email-summary-tool/services/summaryManager"
@@ -69,7 +70,7 @@ func main() {
 		log.Print("ANTHROPIC_API_KEY is not set; AI summaries will fail until it is")
 	}
 
-	s := server.NewServer(jwtConfig, db, inboundDomain, summary.NewService())
+	s := server.NewServer(jwtConfig, db, services.NewDependencyService(inboundDomain, summary.NewService()))
 	defer s.Close()
 
 	if err := summarymanager.NewSummaryManager(s).FailInterrupted(context.Background()); err != nil {

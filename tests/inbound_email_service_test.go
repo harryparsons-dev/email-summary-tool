@@ -9,7 +9,7 @@ import (
 	"email-summary-tool/services/inbound"
 )
 
-func TestInboundEmailServiceFindProjectID(t *testing.T) {
+func TestInboundEmailServiceFindProject(t *testing.T) {
 	service := inbound.NewInboundEmailService(TestServer.Server)
 	// A separate user keeps these projects out of the shared user's project list.
 	user := &models.User{Email: "inbound-find-user@example.com"}
@@ -26,21 +26,21 @@ func TestInboundEmailServiceFindProjectID(t *testing.T) {
 		name          string
 		address       string
 		wantProjectID string
-		wantOK        bool
 	}{
-		{"exact address", project.EmailAddress, project.ID, true},
-		{"mixed case in angle brackets", "<" + strings.ToUpper(project.EmailAddress) + ">", project.ID, true},
-		{"unknown address", "nobody@example.com", "", false},
-		{"other domain", localPart + "@other.example", "", false},
+		{"exact address", project.EmailAddress, project.ID},
+		{"mixed case in angle brackets", "<" + strings.ToUpper(project.EmailAddress) + ">", project.ID},
+		{"unknown address", "nobody@example.com", ""},
+		{"other domain", localPart + "@other.example", ""},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			projectID, ok, err := service.FindProjectID(t.Context(), tc.address)
-			if err != nil {
-				t.Fatalf("FindProjectID() error = %v", err)
+			found := service.FindProject(t.Context(), tc.address)
+			projectID := ""
+			if found != nil {
+				projectID = found.ID
 			}
-			if ok != tc.wantOK || projectID != tc.wantProjectID {
-				t.Fatalf("FindProjectID() = (%q, %v), want (%q, %v)", projectID, ok, tc.wantProjectID, tc.wantOK)
+			if projectID != tc.wantProjectID {
+				t.Fatalf("FindProject() project ID = %q, want %q", projectID, tc.wantProjectID)
 			}
 		})
 	}

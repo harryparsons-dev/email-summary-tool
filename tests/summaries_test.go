@@ -1,12 +1,15 @@
 package tests
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"testing"
 
 	"email-summary-tool/database/factories"
 	"email-summary-tool/database/models"
 	"email-summary-tool/pkg"
+	"email-summary-tool/services/summary"
 	summarymanager "email-summary-tool/services/summaryManager"
 
 	"github.com/google/uuid"
@@ -136,7 +139,7 @@ func TestEmailSummariesCreate(t *testing.T) {
 	}
 
 	TestServer.RunAll(t, cases)
-	TestServer.Background.Wait()
+	TestServer.Dependencies.GetWg().Wait()
 }
 
 func TestEmailSummariesCreateReturnsPendingSummary(t *testing.T) {
@@ -189,19 +192,28 @@ func TestEmailSummariesGet(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create email fixture: %v", err)
 	}
-	failingEmail, err := factories.NewEmail(t.Context(), TestServer.Db, project.ID, failSummarySubject)
+	failingEmail, err := factories.NewEmail(t.Context(), TestServer.Db, project.ID, "Email that fails to summarise")
 	if err != nil {
 		t.Fatalf("create failing email fixture: %v", err)
 	}
 
 	summaries := summarymanager.NewSummaryManager(TestServer.Server)
-	for _, emailID := range []string{email.ID, failingEmail.ID} {
-		emailSummary, _, err := summaries.Create(t.Context(), TestServer.User.ID, project, &emailID)
-		if err != nil {
-			t.Fatalf("create summary: %v", err)
-		}
-		summaries.Generate(emailSummary.ID, project, &emailID)
+	completedSummary, _, err := summaries.Create(t.Context(), TestServer.User.ID, project, &email.ID)
+	if err != nil {
+		t.Fatalf("create summary: %v", err)
 	}
+	summaries.Generate(completedSummary.ID, project, &email.ID)
+
+	// Make the summarizer fail for the second email.
+	TestServer.MockSummarizer.SummarizeFunc = func(context.Context, *models.Email) (*summary.Result, error) {
+		return nil, errors.New("mock summarizer failure")
+	}
+	t.Cleanup(func() { TestServer.MockSummarizer.SummarizeFunc = nil })
+	failingSummary, _, err := summaries.Create(t.Context(), TestServer.User.ID, project, &failingEmail.ID)
+	if err != nil {
+		t.Fatalf("create summary: %v", err)
+	}
+	summaries.Generate(failingSummary.ID, project, &failingEmail.ID)
 
 	emailSummary := latestEmailSummary(t, email.ID)
 	failedSummary := latestEmailSummary(t, failingEmail.ID)
@@ -244,7 +256,7 @@ func TestEmailSummariesGet(t *testing.T) {
 					"summary": "",
 					"error":   "The summary could not be generated. Please try again.",
 				},
-				BodyDoesNotExist: "fake summarizer failure",
+				BodyDoesNotExist: "mock summarizer failure",
 			},
 		},
 		{

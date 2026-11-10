@@ -8,6 +8,8 @@ import (
 	"email-summary-tool/pkg/jwt"
 	"email-summary-tool/routes"
 	"email-summary-tool/server"
+	"email-summary-tool/services"
+	"email-summary-tool/tests/mocks"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -35,6 +37,9 @@ type APITestServer struct {
 	Client     *http.Client
 	AuthCookie *http.Cookie
 	User       *models.User
+	// MockSummarizer is the server's summarizer. Tests can set its funcs to
+	// change the result, and must reset them when done.
+	MockSummarizer *mocks.MockSummarizer
 }
 
 // checkTestDatabase verifies the dependency without changing Docker state.
@@ -93,7 +98,11 @@ func NewTestServer() (*APITestServer, error) {
 		AccessLifetime:  time.Hour,
 		RefreshLifetime: time.Hour,
 	}
-	s := server.NewServer(jwtConfig, db, "example.com", fakeSummarizer{})
+	mockSummarizer := &mocks.MockSummarizer{}
+	dependencies := services.NewDependencyService("example.com", mockSummarizer)
+	// Track background tasks so tests can wait for summaries to finish.
+	dependencies.CreateWg()
+	s := server.NewServer(jwtConfig, db, dependencies)
 	routes.InitializeRoutes(s)
 	routes.InitializeRestrictedRoutes(s)
 
@@ -122,7 +131,8 @@ func NewTestServer() (*APITestServer, error) {
 			Value: accessToken,
 			Path:  "/",
 		},
-		User: user,
+		User:           user,
+		MockSummarizer: mockSummarizer,
 	}, nil
 }
 

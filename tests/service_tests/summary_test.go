@@ -61,7 +61,7 @@ func messageResponse(stopReason, text string) string {
 	return string(encoded)
 }
 
-// newTestSummaryService returns a service pointed at a fake API that replies with
+// newTestSummaryService returns a service pointed at a mock API that replies with
 // the given body and records the request it received.
 func newTestSummaryService(t *testing.T, status int, reply string) (*summary.Service, *capturedRequest) {
 	t.Helper()

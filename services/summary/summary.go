@@ -50,7 +50,7 @@ var ErrNoEmails = errors.New("project has no emails to summarise")
 var ErrEmptyEmail = errors.New("email has no content to summarise")
 
 // Summarizer produces summary text. Service implements it; tests can supply a
-// fake so no API calls are made.
+// mock so no API calls are made.
 type Summarizer interface {
 	Summarize(ctx context.Context, email *models.Email) (*Result, error)
 	SummarizeProject(ctx context.Context, project *models.Project, emails []models.Email) (*Result, error)

@@ -12,7 +12,7 @@ func InitializeRestrictedRoutes(server *server.Server) {
 	projectEmailHandler := projecthandlers.NewProjectEmailHandler(server)
 	projectEmailSummaryHandler := projecthandlers.NewProjectEmailSummaryHandler(server)
 
-	restricted := server.E.Group("", middleware.RequireAuth(server))
+	restricted := server.E.Group("", middleware.Authenticated(server))
 
 	restricted.GET("/projects", projectHandler.List)
 	restricted.POST("/projects", projectHandler.Create)

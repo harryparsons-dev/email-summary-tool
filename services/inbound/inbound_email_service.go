@@ -1,12 +1,9 @@
-// Package inbound generates project email addresses, parses the mail
-// delivered to them and saves it.
 package inbound
 
 import (
 	"bytes"
 	"context"
 	"crypto/rand"
-	"database/sql"
 	"errors"
 	"fmt"
 	"io"
@@ -23,9 +20,6 @@ import (
 	"github.com/emersion/go-message/mail"
 )
 
-// InboundEmailService looks up projects by inbound address and saves delivered
-// mail. The SMTP server uses it today; a provider webhook could call the same
-// methods. It uses the server's database rather than holding its own.
 type InboundEmailService struct {
 	Server *server.Server
 }
@@ -34,28 +28,25 @@ func NewInboundEmailService(s *server.Server) *InboundEmailService {
 	return &InboundEmailService{Server: s}
 }
 
-// FindProjectID returns the ID of the active project that owns address, or
-// ok=false if no project does.
-func (s *InboundEmailService) FindProjectID(ctx context.Context, address string) (projectID string, ok bool, err error) {
+// FindProject returns the project that owns address, or nil if no project
+// does.
+func (s *InboundEmailService) FindProject(ctx context.Context, address string) *models.Project {
 	address = NormalizeAddress(address)
-	if AddressDomain(address) != NormalizeAddress(s.Server.InboundDomain) {
-		return "", false, nil
+	if AddressDomain(address) != NormalizeAddress(s.Server.Dependencies.InboundDomain) {
+		return nil
 	}
 
 	project := &models.Project{}
-	err = s.Server.Db.NewSelect().
+	err := s.Server.Db.NewSelect().
 		Model(project).
 		Column("id").
 		Where("email_address = ?", address).
 		Limit(1).
 		Scan(ctx)
-	if errors.Is(err, sql.ErrNoRows) {
-		return "", false, nil
-	}
 	if err != nil {
-		return "", false, fmt.Errorf("look up project for %s: %w", address, err)
+		return nil
 	}
-	return project.ID, true, nil
+	return project
 }
 
 // Recipient is one accepted envelope recipient and the project it belongs to.

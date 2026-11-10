@@ -185,9 +185,9 @@ func (h *ProjectEmailSummaryHandler) Create(c *echo.Context) error {
 		return responses.Data(c, http.StatusOK, projectresponses.NewSummaryResponse(emailSummary))
 	}
 
-	h.Server.Background.Add()
+	h.Server.Dependencies.WgAdd()
 	go func() {
-		defer h.Server.Background.Done()
+		defer h.Server.Dependencies.WgDone()
 		h.Summaries.Generate(emailSummary.ID, project, &emailID)
 	}()
 

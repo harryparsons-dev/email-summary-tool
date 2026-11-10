@@ -9,7 +9,7 @@ import (
 	"github.com/labstack/echo/v5"
 )
 
-func RequireAuth(server *server.Server) echo.MiddlewareFunc {
+func Authenticated(server *server.Server) echo.MiddlewareFunc {
 	return echo.MiddlewareFunc(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c *echo.Context) error {
 			ctx := c.Request().Context()

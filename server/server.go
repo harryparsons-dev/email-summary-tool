@@ -2,9 +2,8 @@ package server
 
 import (
 	"email-summary-tool/pkg/jwt"
-	"email-summary-tool/services/background"
-	"email-summary-tool/services/summary"
-	appvalidator "email-summary-tool/validator"
+	appvalidator "email-summary-tool/pkg/validator"
+	"email-summary-tool/services"
 	"log"
 	"log/slog"
 	"os"
@@ -19,17 +18,12 @@ type Server struct {
 	Db  *bun.DB
 	JWT *jwt.Config
 
-	// InboundDomain is the domain used for generated project email addresses.
-	InboundDomain string
-
-	// Summarizer writes the AI summaries. Tests replace it with a fake.
-	Summarizer summary.Summarizer
-
-	// Background tracks work handlers run in background goroutines.
-	Background *background.Tasks
+	// Dependencies holds the other shared dependencies, such as the
+	// summarizer and background task tracker.
+	Dependencies *services.DependencyService
 }
 
-func NewServer(jwtConfig *jwt.Config, db *bun.DB, inboundDomain string, summarizer summary.Summarizer) *Server {
+func NewServer(jwtConfig *jwt.Config, db *bun.DB, dependencies *services.DependencyService) *Server {
 
 	e := echo.NewWithConfig(echo.Config{NoGroupAutoRegister404Routes: true})
 	e.Validator = appvalidator.New()
@@ -54,10 +48,7 @@ func NewServer(jwtConfig *jwt.Config, db *bun.DB, inboundDomain string, summariz
 		Db:  db,
 		JWT: jwtConfig,
 
-		InboundDomain: inboundDomain,
-
-		Summarizer: summarizer,
-		Background: background.NewTasks(),
+		Dependencies: dependencies,
 	}
 }
 

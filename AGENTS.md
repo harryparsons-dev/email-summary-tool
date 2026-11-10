@@ -3,11 +3,11 @@
 ## Project structure
 
 - `main/` contains the API entry point.
-- `server/`, `routes/`, `services/`, and `validator/` contain backend application code.
+- `server/`, `routes/`, and `services/` contain backend application code.
 - `database/models/` contains Bun models; `database/migrations/sql/` contains embedded PostgreSQL migrations.
 - `tests/api/` contains authenticated API integration tests and their shared test server.
 - `frontend/` is a Vue 3, TypeScript, Vite, Nuxt UI, and Tailwind application.
-- `pkg/` contains shared Go packages and test helpers, including `pkg/jwt` for JWT signing and verification and `pkg/mailserver` for the inbound SMTP server. Preserve existing package and file naming unless the task includes cleanup.
+- `pkg/` contains shared Go packages and test helpers, including `pkg/jwt` for JWT signing and verification, `pkg/mailserver` for the inbound SMTP server, and `pkg/validator` for request validation. Preserve existing package and file naming unless the task includes cleanup.
 
 ## Development commands
 
@@ -44,11 +44,13 @@
 - Expected integration-test JSON is subset-matched, so assert stable contract fields rather than generated values unless those values are the behavior under test.
 - Every API integration test must define its expected `Body` inline in its `ExpectedResult`. `BodyDoesNotExist` is supplemental and does not replace `Body`; define it inline too. Never extract response-body expectations into variables or helpers, even when this duplicates them.
 - Do not make tests start or stop the shared test database container.
+- Do not test database failures. Do not mock the database or simulate database errors, and do not add tests for database error branches.
 - For backend changes, run the relevant package tests and normally `go test -count=1 ./...`.
 - For frontend changes, run `npm run type-check` through the frontend container; run `npm run build` when the change can affect bundling or production output.
 
 ## Working-tree safety
 
+- Git is handled by the user. Agents never create or switch branches, check out files, stage, commit, or push. Leave changes unstaged in the working tree for the user to review.
 - Assume pre-existing modifications belong to the user. Do not discard, overwrite, or include unrelated changes.
 - Avoid destructive Git or Docker operations unless explicitly requested. In particular, `docker compose down --volumes` deletes local database data.
 - Report commands that could not be run and the reason in the final handoff.

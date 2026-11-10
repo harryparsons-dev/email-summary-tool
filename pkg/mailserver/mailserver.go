@@ -1,5 +1,5 @@
 // Package mailserver runs an SMTP server that accepts mail for project
-// addresses and hands it to an Inbox to be stored.
+// addresses and hands it to the inbound email service to be stored.
 package mailserver
 
 import (
@@ -19,15 +19,8 @@ const (
 	deliverTimeout  = 30 * time.Second
 )
 
-// Inbox decides which recipients are accepted and stores delivered mail.
-// *inbound.InboundEmailService implements it.
-type Inbox interface {
-	FindProjectID(ctx context.Context, address string) (projectID string, ok bool, err error)
-	Deliver(ctx context.Context, envelopeFrom string, recipients []inbound.Recipient, raw []byte) error
-}
-
 // New returns an SMTP server listening on addr that accepts mail for domain.
-func New(addr, domain string, inbox Inbox) *smtp.Server {
+func New(addr, domain string, inbox *inbound.InboundEmailService) *smtp.Server {
 	server := smtp.NewServer(&backend{inbox: inbox})
 	server.Addr = addr
 	server.Domain = domain
@@ -39,7 +32,7 @@ func New(addr, domain string, inbox Inbox) *smtp.Server {
 }
 
 type backend struct {
-	inbox Inbox
+	inbox *inbound.InboundEmailService
 }
 
 func (b *backend) NewSession(_ *smtp.Conn) (smtp.Session, error) {
@@ -49,7 +42,7 @@ func (b *backend) NewSession(_ *smtp.Conn) (smtp.Session, error) {
 // session tracks one SMTP transaction. It does not implement AUTH, so the
 // server only accepts mail for our own addresses and never relays.
 type session struct {
-	inbox      Inbox
+	inbox      *inbound.InboundEmailService
 	from       string
 	recipients []inbound.Recipient
 }
@@ -63,16 +56,8 @@ func (s *session) Rcpt(to string, _ *smtp.RcptOptions) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	projectID, ok, err := s.inbox.FindProjectID(ctx, to)
-	if err != nil {
-		log.Printf("smtp: %v", err)
-		return &smtp.SMTPError{
-			Code:         451,
-			EnhancedCode: smtp.EnhancedCode{4, 3, 0},
-			Message:      "Temporary error, please try again later",
-		}
-	}
-	if !ok {
+	project := s.inbox.FindProject(ctx, to)
+	if project == nil {
 		return &smtp.SMTPError{
 			Code:         550,
 			EnhancedCode: smtp.EnhancedCode{5, 1, 1},
@@ -80,7 +65,7 @@ func (s *session) Rcpt(to string, _ *smtp.RcptOptions) error {
 		}
 	}
 
-	s.recipients = append(s.recipients, inbound.Recipient{Address: to, ProjectID: projectID})
+	s.recipients = append(s.recipients, inbound.Recipient{Address: to, ProjectID: project.ID})
 	return nil
 }
 

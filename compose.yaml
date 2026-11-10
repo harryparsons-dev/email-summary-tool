@@ -31,8 +31,7 @@ services:
     environment:
       VITE_API_PROXY_TARGET: http://api:8080
     depends_on:
-      api:
-        condition: service_healthy
+      - api
     ports:
       - "5173:5173"
     volumes:

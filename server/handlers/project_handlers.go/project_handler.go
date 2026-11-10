@@ -100,7 +100,7 @@ func (h *ProjectHandler) Create(c *echo.Context) error {
 	// Each project gets a newly generated inbound email address; retry on the
 	// unlikely chance that the generated address is already taken.
 	for attempt := 0; attempt < models.ProjectEmailAddressAttempts; attempt++ {
-		address, err := inbound.GenerateAddress(h.Server.InboundDomain)
+		address, err := inbound.GenerateAddress(h.Server.Dependencies.InboundDomain)
 		if err != nil {
 			log.Printf("Unexpected error generating project email address: %v", err)
 			return responses.Error(c, http.StatusInternalServerError, "Failed to create project")
