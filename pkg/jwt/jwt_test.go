@@ -1,26 +1,26 @@
-package config
+package jwt
 
 import (
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
+	gojwt "github.com/golang-jwt/jwt/v5"
 )
 
 const testJWTSecret = "a-test-secret-that-is-at-least-32-characters-long"
 
 func TestNewJWTConfigRejectsShortSecret(t *testing.T) {
-	_, err := NewJWTConfig("too-short")
+	_, err := NewConfig("too-short")
 	if err == nil {
-		t.Fatal("NewJWTConfig() accepted a short secret")
+		t.Fatal("NewConfig() accepted a short secret")
 	}
 }
 
 func TestJWTConfigSignsAndVerifiesAccessToken(t *testing.T) {
-	jwtConfig, err := NewJWTConfig(testJWTSecret)
+	jwtConfig, err := NewConfig(testJWTSecret)
 	if err != nil {
-		t.Fatalf("NewJWTConfig() error = %v", err)
+		t.Fatalf("NewConfig() error = %v", err)
 	}
 
 	token, err := jwtConfig.SignAccessToken("user-123")
@@ -38,9 +38,9 @@ func TestJWTConfigSignsAndVerifiesAccessToken(t *testing.T) {
 }
 
 func TestJWTConfigKeepsRefreshTokenValidAfterAccessTokenExpires(t *testing.T) {
-	jwtConfig, err := NewJWTConfig(testJWTSecret)
+	jwtConfig, err := NewConfig(testJWTSecret)
 	if err != nil {
-		t.Fatalf("NewJWTConfig() error = %v", err)
+		t.Fatalf("NewConfig() error = %v", err)
 	}
 	jwtConfig.AccessLifetime = -time.Minute
 
@@ -62,9 +62,9 @@ func TestJWTConfigKeepsRefreshTokenValidAfterAccessTokenExpires(t *testing.T) {
 }
 
 func TestJWTConfigDoesNotAcceptAccessTokenAsRefreshToken(t *testing.T) {
-	jwtConfig, err := NewJWTConfig(testJWTSecret)
+	jwtConfig, err := NewConfig(testJWTSecret)
 	if err != nil {
-		t.Fatalf("NewJWTConfig() error = %v", err)
+		t.Fatalf("NewConfig() error = %v", err)
 	}
 
 	accessToken, err := jwtConfig.SignAccessToken("user-123")
@@ -78,13 +78,13 @@ func TestJWTConfigDoesNotAcceptAccessTokenAsRefreshToken(t *testing.T) {
 }
 
 func TestJWTConfigRejectsTokenSignedWithAnotherKey(t *testing.T) {
-	jwtConfig, err := NewJWTConfig(testJWTSecret)
+	jwtConfig, err := NewConfig(testJWTSecret)
 	if err != nil {
-		t.Fatalf("NewJWTConfig() error = %v", err)
+		t.Fatalf("NewConfig() error = %v", err)
 	}
 
 	otherKey := []byte(strings.Repeat("b", 32))
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+	token, err := gojwt.NewWithClaims(gojwt.SigningMethodHS256, gojwt.MapClaims{
 		"user_id": "user-123",
 	}).SignedString(otherKey)
 	if err != nil {
@@ -97,12 +97,12 @@ func TestJWTConfigRejectsTokenSignedWithAnotherKey(t *testing.T) {
 }
 
 func TestJWTConfigRejectsTokenWithoutExpiration(t *testing.T) {
-	jwtConfig, err := NewJWTConfig(testJWTSecret)
+	jwtConfig, err := NewConfig(testJWTSecret)
 	if err != nil {
-		t.Fatalf("NewJWTConfig() error = %v", err)
+		t.Fatalf("NewConfig() error = %v", err)
 	}
 
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+	token, err := gojwt.NewWithClaims(gojwt.SigningMethodHS256, gojwt.MapClaims{
 		"user_id": "user-123",
 	}).SignedString(jwtConfig.SigningKey)
 	if err != nil {

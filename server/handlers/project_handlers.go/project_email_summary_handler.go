@@ -10,7 +10,7 @@ import (
 	"email-summary-tool/pkg/responses"
 	"email-summary-tool/server"
 	projectresponses "email-summary-tool/server/responses"
-	"email-summary-tool/services/summary"
+	summarymanager "email-summary-tool/services/summaryManager"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
@@ -22,13 +22,13 @@ const emailSummaryListLimit = 50
 // /projects/:id/emails/:emailId/summarise resource.
 type ProjectEmailSummaryHandler struct {
 	Server    *server.Server
-	Summaries *summary.Manager
+	Summaries *summarymanager.SummaryManager
 }
 
 func NewProjectEmailSummaryHandler(s *server.Server) *ProjectEmailSummaryHandler {
 	return &ProjectEmailSummaryHandler{
 		Server:    s,
-		Summaries: summary.NewManager(s.Db, s.Summarizer),
+		Summaries: summarymanager.NewSummaryManager(s),
 	}
 }
 

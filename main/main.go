@@ -3,13 +3,14 @@ package main
 import (
 	"context"
 	"database/sql"
-	"email-summary-tool/config"
 	"email-summary-tool/database/migrations"
-	"email-summary-tool/mailserver"
+	"email-summary-tool/pkg/jwt"
+	"email-summary-tool/pkg/mailserver"
 	"email-summary-tool/routes"
 	"email-summary-tool/server"
 	"email-summary-tool/services/inbound"
 	"email-summary-tool/services/summary"
+	summarymanager "email-summary-tool/services/summaryManager"
 	"log"
 	"net/url"
 	"os"
@@ -20,7 +21,7 @@ import (
 )
 
 func main() {
-	jwtConfig, err := config.NewJWTConfig(os.Getenv("SECRET_KEY"))
+	jwtConfig, err := jwt.NewConfig(os.Getenv("SECRET_KEY"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -71,14 +72,14 @@ func main() {
 	s := server.NewServer(jwtConfig, db, inboundDomain, summary.NewService())
 	defer s.Close()
 
-	if err := summary.NewManager(s.Db, s.Summarizer).FailInterrupted(context.Background()); err != nil {
+	if err := summarymanager.NewSummaryManager(s).FailInterrupted(context.Background()); err != nil {
 		log.Printf("Unable to clean up interrupted summaries: %v", err)
 	}
 
 	routes.InitializeRoutes(s)
 	routes.InitializeRestrictedRoutes(s)
 
-	smtpServer := mailserver.New(smtpAddr, inboundDomain, inbound.NewStore(s.Db, inboundDomain))
+	smtpServer := mailserver.New(smtpAddr, inboundDomain, inbound.NewInboundEmailService(s))
 	defer smtpServer.Close()
 	go func() {
 		log.Printf("SMTP server accepting mail for @%s on %s", inboundDomain, smtpAddr)

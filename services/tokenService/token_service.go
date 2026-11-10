@@ -1,7 +1,7 @@
 package tokenservice
 
 import (
-	"email-summary-tool/config"
+	"email-summary-tool/pkg/jwt"
 	"net/http"
 	"time"
 
@@ -14,10 +14,10 @@ const (
 )
 
 type TokenService struct {
-	jwtConfig *config.JWTConfig
+	jwtConfig *jwt.Config
 }
 
-func NewTokenService(jwtConfig *config.JWTConfig) *TokenService {
+func NewTokenService(jwtConfig *jwt.Config) *TokenService {
 	return &TokenService{jwtConfig: jwtConfig}
 }
 

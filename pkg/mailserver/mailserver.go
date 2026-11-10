@@ -20,7 +20,7 @@ const (
 )
 
 // Inbox decides which recipients are accepted and stores delivered mail.
-// *inbound.Store implements it.
+// *inbound.InboundEmailService implements it.
 type Inbox interface {
 	FindProjectID(ctx context.Context, address string) (projectID string, ok bool, err error)
 	Deliver(ctx context.Context, envelopeFrom string, recipients []inbound.Recipient, raw []byte) error

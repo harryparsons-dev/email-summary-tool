@@ -3,9 +3,9 @@ package tests
 import (
 	"context"
 	"database/sql"
-	"email-summary-tool/config"
 	"email-summary-tool/database/migrations"
 	"email-summary-tool/database/models"
+	"email-summary-tool/pkg/jwt"
 	"email-summary-tool/routes"
 	"email-summary-tool/server"
 	"fmt"
@@ -88,7 +88,7 @@ func NewTestServer() (*APITestServer, error) {
 		return nil, fmt.Errorf("apply test database migrations: %w", err)
 	}
 
-	jwtConfig := &config.JWTConfig{
+	jwtConfig := &jwt.Config{
 		SigningKey:      []byte(testJWTSecret),
 		AccessLifetime:  time.Hour,
 		RefreshLifetime: time.Hour,

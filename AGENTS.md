@@ -3,11 +3,11 @@
 ## Project structure
 
 - `main/` contains the API entry point.
-- `server/`, `routes/`, `services/`, `validator/`, and `config/` contain backend application code.
+- `server/`, `routes/`, `services/`, and `validator/` contain backend application code.
 - `database/models/` contains Bun models; `database/migrations/sql/` contains embedded PostgreSQL migrations.
 - `tests/api/` contains authenticated API integration tests and their shared test server.
 - `frontend/` is a Vue 3, TypeScript, Vite, Nuxt UI, and Tailwind application.
-- `pkg/` contains shared Go test helpers. Preserve existing package and file naming unless the task includes cleanup.
+- `pkg/` contains shared Go packages and test helpers, including `pkg/jwt` for JWT signing and verification and `pkg/mailserver` for the inbound SMTP server. Preserve existing package and file naming unless the task includes cleanup.
 
 ## Development commands
 

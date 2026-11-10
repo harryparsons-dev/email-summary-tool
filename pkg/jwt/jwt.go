@@ -1,11 +1,11 @@
-package config
+package jwt
 
 import (
 	"errors"
 	"fmt"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
+	gojwt "github.com/golang-jwt/jwt/v5"
 )
 
 const (
@@ -16,10 +16,10 @@ const (
 	refreshTokenType       = "refresh"
 )
 
-// JWTConfig owns the JWT signing key and token settings. Keeping the key
+// Config owns the JWT signing key and token settings. Keeping the key
 // private prevents handlers and middleware from retaining their own direct
 // references to it.
-type JWTConfig struct {
+type Config struct {
 	SigningKey      []byte
 	AccessLifetime  time.Duration
 	RefreshLifetime time.Duration
@@ -28,65 +28,65 @@ type JWTConfig struct {
 type jwtClaims struct {
 	UserID    string `json:"user_id"`
 	TokenType string `json:"token_type"`
-	jwt.RegisteredClaims
+	gojwt.RegisteredClaims
 }
 
-func NewJWTConfig(secret string) (*JWTConfig, error) {
+func NewConfig(secret string) (*Config, error) {
 	if len(secret) < minimumJWTSecretLength {
 		return nil, fmt.Errorf("SECRET_KEY must be set to a random value of at least %d characters", minimumJWTSecretLength)
 	}
 
-	return &JWTConfig{
+	return &Config{
 		SigningKey:      []byte(secret),
 		AccessLifetime:  defaultAccessLifetime,
 		RefreshLifetime: defaultRefreshLifetime,
 	}, nil
 }
 
-func (c *JWTConfig) SignAccessToken(userID string) (string, error) {
+func (c *Config) SignAccessToken(userID string) (string, error) {
 	return c.signToken(userID, accessTokenType, c.AccessLifetime)
 }
 
-func (c *JWTConfig) SignRefreshToken(userID string) (string, error) {
+func (c *Config) SignRefreshToken(userID string) (string, error) {
 	return c.signToken(userID, refreshTokenType, c.RefreshLifetime)
 }
 
-func (c *JWTConfig) signToken(userID, tokenType string, lifetime time.Duration) (string, error) {
+func (c *Config) signToken(userID, tokenType string, lifetime time.Duration) (string, error) {
 	if userID == "" {
 		return "", errors.New("cannot sign a token without a user ID")
 	}
 
 	now := time.Now()
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwtClaims{
+	token := gojwt.NewWithClaims(gojwt.SigningMethodHS256, jwtClaims{
 		UserID:    userID,
 		TokenType: tokenType,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(now.Add(lifetime)),
-			IssuedAt:  jwt.NewNumericDate(now),
+		RegisteredClaims: gojwt.RegisteredClaims{
+			ExpiresAt: gojwt.NewNumericDate(now.Add(lifetime)),
+			IssuedAt:  gojwt.NewNumericDate(now),
 		},
 	})
 
 	return token.SignedString(c.SigningKey)
 }
 
-func (c *JWTConfig) VerifyAccessToken(tokenString string) (string, error) {
+func (c *Config) VerifyAccessToken(tokenString string) (string, error) {
 	return c.verifyToken(tokenString, accessTokenType)
 }
 
-func (c *JWTConfig) VerifyRefreshToken(tokenString string) (string, error) {
+func (c *Config) VerifyRefreshToken(tokenString string) (string, error) {
 	return c.verifyToken(tokenString, refreshTokenType)
 }
 
-func (c *JWTConfig) verifyToken(tokenString, expectedType string) (string, error) {
+func (c *Config) verifyToken(tokenString, expectedType string) (string, error) {
 	claims := new(jwtClaims)
-	token, err := jwt.ParseWithClaims(
+	token, err := gojwt.ParseWithClaims(
 		tokenString,
 		claims,
-		func(_ *jwt.Token) (any, error) {
+		func(_ *gojwt.Token) (any, error) {
 			return c.SigningKey, nil
 		},
-		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}),
-		jwt.WithExpirationRequired(),
+		gojwt.WithValidMethods([]string{gojwt.SigningMethodHS256.Alg()}),
+		gojwt.WithExpirationRequired(),
 	)
 	if err != nil {
 		return "", err
@@ -98,10 +98,10 @@ func (c *JWTConfig) verifyToken(tokenString, expectedType string) (string, error
 	return claims.UserID, nil
 }
 
-func (c *JWTConfig) AccessCookieMaxAge() int {
+func (c *Config) AccessCookieMaxAge() int {
 	return int(c.AccessLifetime / time.Second)
 }
 
-func (c *JWTConfig) RefreshCookieMaxAge() int {
+func (c *Config) RefreshCookieMaxAge() int {
 	return int(c.RefreshLifetime / time.Second)
 }

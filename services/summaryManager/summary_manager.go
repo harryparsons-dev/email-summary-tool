@@ -1,4 +1,6 @@
-package summary
+// Package summarymanager stores summaries and runs the jobs that generate
+// their text.
+package summarymanager
 
 import (
 	"context"
@@ -9,8 +11,8 @@ import (
 	"time"
 
 	"email-summary-tool/database/models"
-
-	"github.com/uptrace/bun"
+	"email-summary-tool/server"
+	"email-summary-tool/services/summary"
 )
 
 const (
@@ -21,30 +23,23 @@ const (
 	interruptedFailureMessage = "The summary was interrupted. Please try again."
 )
 
-// Summarizer produces summary text. Service implements it; tests can supply a
-// fake so no API calls are made.
-type Summarizer interface {
-	Summarize(ctx context.Context, email *models.Email) (*Result, error)
-	SummarizeProject(ctx context.Context, project *models.Project, emails []models.Email) (*Result, error)
+// SummaryManager stores summaries and generates their text. It uses the
+// server's database and summarizer rather than holding its own.
+type SummaryManager struct {
+	Server *server.Server
 }
 
-// Manager stores summaries and generates their text.
-type Manager struct {
-	db         *bun.DB
-	summarizer Summarizer
-}
-
-func NewManager(db *bun.DB, summarizer Summarizer) *Manager {
-	return &Manager{db: db, summarizer: summarizer}
+func NewSummaryManager(s *server.Server) *SummaryManager {
+	return &SummaryManager{Server: s}
 }
 
 // Create saves a pending summary. The caller then runs Generate, usually in a
 // background goroutine. emailID nil means the whole project is summarised. If
 // a matching summary is already pending, that one is returned instead and
 // created is false.
-func (m *Manager) Create(ctx context.Context, userID string, project *models.Project, emailID *string) (summary *models.Summary, created bool, err error) {
+func (m *SummaryManager) Create(ctx context.Context, userID string, project *models.Project, emailID *string) (newSummary *models.Summary, created bool, err error) {
 	existing := &models.Summary{}
-	query := m.db.NewSelect().
+	query := m.Server.Db.NewSelect().
 		Model(existing).
 		Where("s.project_id = ?", project.ID).
 		Where("s.user_id = ?", userID).
@@ -64,23 +59,23 @@ func (m *Manager) Create(ctx context.Context, userID string, project *models.Pro
 		return nil, false, fmt.Errorf("check for pending summary: %w", err)
 	}
 
-	summary = &models.Summary{
+	newSummary = &models.Summary{
 		UserId:    userID,
 		ProjectId: project.ID,
 		EmailId:   emailID,
 		Status:    models.SummaryStatusPending,
 	}
-	if _, err := m.db.NewInsert().Model(summary).Returning("*").Exec(ctx); err != nil {
+	if _, err := m.Server.Db.NewInsert().Model(newSummary).Returning("*").Exec(ctx); err != nil {
 		return nil, false, fmt.Errorf("create summary: %w", err)
 	}
 
-	return summary, true, nil
+	return newSummary, true, nil
 }
 
 // FailInterrupted marks summaries still pending from a previous run of the
 // server as failed. Call it once at startup, before serving requests.
-func (m *Manager) FailInterrupted(ctx context.Context) error {
-	_, err := m.db.NewUpdate().
+func (m *SummaryManager) FailInterrupted(ctx context.Context) error {
+	_, err := m.Server.Db.NewUpdate().
 		Model((*models.Summary)(nil)).
 		Set("status = ?", models.SummaryStatusFailed).
 		Set("error = ?", interruptedFailureMessage).
@@ -97,12 +92,12 @@ func (m *Manager) FailInterrupted(ctx context.Context) error {
 // is meant to run in a background goroutine after the request that created
 // the summary has returned, so it uses its own context rather than the
 // request's.
-func (m *Manager) Generate(summaryID string, project *models.Project, emailID *string) {
+func (m *SummaryManager) Generate(summaryID string, project *models.Project, emailID *string) {
 	ctx, cancel := context.WithTimeout(context.Background(), jobTimeout)
 	defer cancel()
 
 	var (
-		result *Result
+		result *summary.Result
 		err    error
 	)
 	func() {
@@ -114,7 +109,7 @@ func (m *Manager) Generate(summaryID string, project *models.Project, emailID *s
 		result, err = m.generate(ctx, project, emailID)
 	}()
 
-	update := m.db.NewUpdate().
+	update := m.Server.Db.NewUpdate().
 		Model((*models.Summary)(nil)).
 		Set("updated_at = ?", time.Now()).
 		Where("id = ?", summaryID)
@@ -137,10 +132,10 @@ func (m *Manager) Generate(summaryID string, project *models.Project, emailID *s
 	}
 }
 
-func (m *Manager) generate(ctx context.Context, project *models.Project, emailID *string) (*Result, error) {
+func (m *SummaryManager) generate(ctx context.Context, project *models.Project, emailID *string) (*summary.Result, error) {
 	if emailID != nil {
 		email := &models.Email{}
-		err := m.db.NewSelect().
+		err := m.Server.Db.NewSelect().
 			Model(email).
 			ExcludeColumn("raw_message").
 			Where("id = ?", *emailID).
@@ -149,29 +144,29 @@ func (m *Manager) generate(ctx context.Context, project *models.Project, emailID
 		if err != nil {
 			return nil, fmt.Errorf("load email: %w", err)
 		}
-		return m.summarizer.Summarize(ctx, email)
+		return m.Server.Summarizer.Summarize(ctx, email)
 	}
 
 	emails := []models.Email{}
-	err := m.db.NewSelect().
+	err := m.Server.Db.NewSelect().
 		Model(&emails).
 		ExcludeColumn("raw_message").
 		Where("project_id = ?", project.ID).
 		Order("received_at DESC").
-		Limit(maxProjectEmails + 1). // one extra so the service can tell emails were left out
+		Limit(summary.MaxProjectEmails + 1). // one extra so the service can tell emails were left out
 		Scan(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("load project emails: %w", err)
 	}
-	return m.summarizer.SummarizeProject(ctx, project, emails)
+	return m.Server.Summarizer.SummarizeProject(ctx, project, emails)
 }
 
 // failureMessage turns an error into text that is safe to show the user.
 func failureMessage(err error) string {
 	switch {
-	case errors.Is(err, ErrEmptyEmail):
+	case errors.Is(err, summary.ErrEmptyEmail):
 		return "This email has no content to summarise."
-	case errors.Is(err, ErrNoEmails):
+	case errors.Is(err, summary.ErrNoEmails):
 		return "This project has no emails to summarise."
 	default:
 		return genericFailureMessage

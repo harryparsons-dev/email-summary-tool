@@ -1,7 +1,7 @@
 package servicetests
 
 import (
-	"email-summary-tool/config"
+	"email-summary-tool/pkg/jwt"
 	tokenservice "email-summary-tool/services/tokenService"
 	"net/http"
 	"net/http/httptest"
@@ -52,7 +52,7 @@ func TestTokenServiceClearsAuthenticationCookies(t *testing.T) {
 func newTestTokenService(t *testing.T) *tokenservice.TokenService {
 	t.Helper()
 
-	jwtConfig, err := config.NewJWTConfig("a-test-secret-that-is-at-least-32-characters")
+	jwtConfig, err := jwt.NewConfig("a-test-secret-that-is-at-least-32-characters")
 	if err != nil {
 		t.Fatalf("NewJWTConfig() error = %v", err)
 	}

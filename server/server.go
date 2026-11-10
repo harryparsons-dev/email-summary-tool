@@ -1,7 +1,7 @@
 package server
 
 import (
-	"email-summary-tool/config"
+	"email-summary-tool/pkg/jwt"
 	"email-summary-tool/services/background"
 	"email-summary-tool/services/summary"
 	appvalidator "email-summary-tool/validator"
@@ -17,7 +17,7 @@ import (
 type Server struct {
 	E   *echo.Echo
 	Db  *bun.DB
-	JWT *config.JWTConfig
+	JWT *jwt.Config
 
 	// InboundDomain is the domain used for generated project email addresses.
 	InboundDomain string
@@ -29,7 +29,7 @@ type Server struct {
 	Background *background.Tasks
 }
 
-func NewServer(jwtConfig *config.JWTConfig, db *bun.DB, inboundDomain string, summarizer summary.Summarizer) *Server {
+func NewServer(jwtConfig *jwt.Config, db *bun.DB, inboundDomain string, summarizer summary.Summarizer) *Server {
 
 	e := echo.NewWithConfig(echo.Config{NoGroupAutoRegister404Routes: true})
 	e.Validator = appvalidator.New()

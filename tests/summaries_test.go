@@ -7,7 +7,7 @@ import (
 	"email-summary-tool/database/factories"
 	"email-summary-tool/database/models"
 	"email-summary-tool/pkg"
-	"email-summary-tool/services/summary"
+	summarymanager "email-summary-tool/services/summaryManager"
 
 	"github.com/google/uuid"
 )
@@ -194,7 +194,7 @@ func TestEmailSummariesGet(t *testing.T) {
 		t.Fatalf("create failing email fixture: %v", err)
 	}
 
-	summaries := summary.NewManager(TestServer.Db, TestServer.Summarizer)
+	summaries := summarymanager.NewSummaryManager(TestServer.Server)
 	for _, emailID := range []string{email.ID, failingEmail.ID} {
 		emailSummary, _, err := summaries.Create(t.Context(), TestServer.User.ID, project, &emailID)
 		if err != nil {
@@ -311,7 +311,7 @@ func TestEmailSummariesList(t *testing.T) {
 		t.Fatalf("create other email fixture: %v", err)
 	}
 
-	summaries := summary.NewManager(TestServer.Db, TestServer.Summarizer)
+	summaries := summarymanager.NewSummaryManager(TestServer.Server)
 	for _, emailID := range []string{email.ID, otherEmail.ID} {
 		emailSummary, _, err := summaries.Create(t.Context(), TestServer.User.ID, project, &emailID)
 		if err != nil {

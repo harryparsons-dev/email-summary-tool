@@ -27,7 +27,7 @@ const (
 
 	// A project summary uses at most this many of the newest emails, and at
 	// most maxProjectEmailChars of each email's body.
-	maxProjectEmails     = 50
+	MaxProjectEmails     = 50
 	maxProjectEmailChars = 4_000
 )
 
@@ -48,6 +48,13 @@ var ErrNoEmails = errors.New("project has no emails to summarise")
 
 // ErrEmptyEmail is returned when an email has no subject or body to summarise.
 var ErrEmptyEmail = errors.New("email has no content to summarise")
+
+// Summarizer produces summary text. Service implements it; tests can supply a
+// fake so no API calls are made.
+type Summarizer interface {
+	Summarize(ctx context.Context, email *models.Email) (*Result, error)
+	SummarizeProject(ctx context.Context, project *models.Project, emails []models.Email) (*Result, error)
+}
 
 // Result is a generated summary.
 type Result struct {
@@ -88,15 +95,15 @@ func (s *Service) Summarize(ctx context.Context, email *models.Email) (*Result, 
 }
 
 // SummarizeProject asks Claude for an overview of a project's emails. Pass
-// the emails newest first; only the first maxProjectEmails are used.
+// the emails newest first; only the first MaxProjectEmails are used.
 func (s *Service) SummarizeProject(ctx context.Context, project *models.Project, emails []models.Email) (*Result, error) {
 	if len(emails) == 0 {
 		return nil, ErrNoEmails
 	}
 
 	truncated := false
-	if len(emails) > maxProjectEmails {
-		emails = emails[:maxProjectEmails]
+	if len(emails) > MaxProjectEmails {
+		emails = emails[:MaxProjectEmails]
 		truncated = true
 	}
 
