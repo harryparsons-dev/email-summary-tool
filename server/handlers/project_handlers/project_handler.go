@@ -17,7 +17,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
-	"github.com/uptrace/bun/driver/pgdriver"
 )
 
 type ProjectHandler struct {
@@ -34,13 +33,14 @@ func (h *ProjectHandler) List(c *echo.Context) error {
 	ctx := c.Request().Context()
 	user := c.Get("user").(*models.User)
 
-	page, pageSize, pagniation := pkg.Paginate(c)
+	page, pageSize, pagination := pkg.Paginate(c)
 
 	var projects []models.Project
 	err := h.Server.Db.NewSelect().
 		Model(&projects).
 		Where("user_id = ?", user.ID).
-		Apply(pagniation).
+		Order("created_at DESC", "id DESC").
+		Apply(pagination).
 		Scan(ctx)
 	if err != nil {
 		log.Printf("Unexpected error listing projects: %v", err)
@@ -52,7 +52,8 @@ func (h *ProjectHandler) List(c *echo.Context) error {
 		Where("user_id = ?", user.ID).
 		Count(ctx)
 	if err != nil {
-		totalCount = 0
+		log.Printf("Unexpected error counting projects: %v", err)
+		return responses.Error(c, http.StatusInternalServerError, "Failed to list projects")
 	}
 
 	response := projectresponses.NewPaginatedProjectResponse(projects, page, pageSize, int(totalCount))
@@ -89,46 +90,39 @@ func (h *ProjectHandler) Create(c *echo.Context) error {
 	user := c.Get("user").(*models.User)
 
 	request := &requests.CreateProjectRequest{}
-	if err := c.Bind(&request); err != nil {
+	if err := c.Bind(request); err != nil {
 		return responses.Error(c, http.StatusBadRequest, "Invalid request body")
 	}
 
 	if !models.ValidProjectStatuses[request.Status] {
 		return responses.Error(c, http.StatusBadRequest, "Invalid project status")
 	}
-
-	// Each project gets a newly generated inbound email address; retry on the
-	// unlikely chance that the generated address is already taken.
-	for attempt := 0; attempt < models.ProjectEmailAddressAttempts; attempt++ {
-		address, err := inbound.GenerateAddress(h.Server.Dependencies.InboundDomain)
-		if err != nil {
-			log.Printf("Unexpected error generating project email address: %v", err)
-			return responses.Error(c, http.StatusInternalServerError, "Failed to create project")
-		}
-
-		project := &models.Project{
-			Title:        request.Name,
-			Description:  request.Description,
-			Status:       request.Status,
-			EmailAddress: address,
-			UserId:       user.ID,
-		}
-
-		_, err = h.Server.Db.NewInsert().Model(project).Exec(ctx)
-		if isUniqueViolation(err) {
-			continue
-		}
-		if err != nil {
-			log.Printf("Unexpected error creating project: %v", err)
-			return responses.Error(c, http.StatusInternalServerError, "Failed to create project")
-		}
-
-		response := projectresponses.NewProjectResponse(project)
-		return responses.Data(c, http.StatusCreated, response)
+	if err := request.Validate(); err != nil {
+		return responses.Error(c, http.StatusBadRequest, "Invalid request body")
 	}
 
-	log.Printf("Unexpected error creating project: no free email address after %d attempts", models.ProjectEmailAddressAttempts)
-	return responses.Error(c, http.StatusInternalServerError, "Failed to create project")
+	// Each project gets a newly generated inbound email address.
+	address, err := inbound.GenerateAddress(h.Server.Dependencies.InboundDomain)
+	if err != nil {
+		log.Printf("Unexpected error generating project email address: %v", err)
+		return responses.Error(c, http.StatusInternalServerError, "Failed to create project")
+	}
+
+	project := &models.Project{
+		Title:        request.Name,
+		Description:  request.Description,
+		Status:       request.Status,
+		EmailAddress: address,
+		UserId:       user.ID,
+	}
+
+	_, err = h.Server.Db.NewInsert().Model(project).Exec(ctx)
+	if err != nil {
+		log.Printf("Unexpected error creating project: %v", err)
+		return responses.Error(c, http.StatusInternalServerError, "Failed to create project")
+	}
+
+	return responses.Data(c, http.StatusCreated, projectresponses.NewProjectResponse(project))
 }
 
 func (h *ProjectHandler) Update(c *echo.Context) error {
@@ -219,9 +213,4 @@ func (h *ProjectHandler) Delete(c *echo.Context) error {
 	}
 
 	return c.NoContent(http.StatusNoContent)
-}
-
-func isUniqueViolation(err error) bool {
-	var pgErr pgdriver.Error
-	return errors.As(err, &pgErr) && pgErr.Field('C') == "23505"
 }

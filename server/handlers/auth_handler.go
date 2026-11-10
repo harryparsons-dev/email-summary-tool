@@ -5,6 +5,7 @@ import (
 	"email-summary-tool/database/models"
 	"email-summary-tool/pkg/responses"
 	"email-summary-tool/server"
+	"email-summary-tool/server/requests"
 	userresponses "email-summary-tool/server/responses"
 	tokenservice "email-summary-tool/services/tokenService"
 	"errors"
@@ -29,25 +30,26 @@ func NewAuthHandler(server *server.Server) *AuthHandler {
 
 func (h *AuthHandler) SignUp(c *echo.Context) error {
 	ctx := c.Request().Context()
-	var request struct {
-		Email    string `json:"email" form:"email" validate:"required"`
-		Password string `json:"password" form:"password" validate:"required"`
-	}
-	if err := c.Bind(&request); err != nil {
+	request := &requests.SignUpRequest{}
+	if err := c.Bind(request); err != nil {
 		return responses.Error(c, http.StatusBadRequest, "Invalid request payload")
 	}
-	if err := c.Validate(&request); err != nil {
-		return responses.Error(c, http.StatusBadRequest, "Email and password are required")
+	if err := request.Validate(); err != nil {
+		return responses.Error(c, http.StatusBadRequest, err.Error())
 	}
 
-	existingUser := &models.User{}
-	h.server.Db.NewSelect().Model(&models.User{}).Where("email = ?", request.Email).Scan(ctx, existingUser)
-	if existingUser.ID != "" {
+	exists, err := h.server.Db.NewSelect().Model((*models.User)(nil)).Where("email = ?", request.Email).Exists(ctx)
+	if err != nil {
+		log.Printf("Error checking for existing user while signing up: %v", err)
+		return responses.Error(c, http.StatusInternalServerError, "Error signing up user")
+	}
+	if exists {
 		return responses.Error(c, http.StatusBadRequest, "User with this email already exists")
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(request.Password), 10)
+	hash, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
 	if err != nil {
+		log.Printf("Error hashing password while signing up: %v", err)
 		return responses.Error(c, http.StatusInternalServerError, "Error signing up user")
 	}
 
@@ -56,6 +58,7 @@ func (h *AuthHandler) SignUp(c *echo.Context) error {
 		PasswordHash: string(hash),
 	}
 	if _, err := h.server.Db.NewInsert().Model(user).Exec(ctx); err != nil {
+		log.Printf("Error creating user while signing up: %v", err)
 		return responses.Error(c, http.StatusInternalServerError, "Error signing up user")
 	}
 
@@ -64,21 +67,22 @@ func (h *AuthHandler) SignUp(c *echo.Context) error {
 
 func (h *AuthHandler) Login(c *echo.Context) error {
 	ctx := c.Request().Context()
-	var request struct {
-		Email    string `json:"email" form:"email" validate:"required"`
-		Password string `json:"password" form:"password" validate:"required"`
-	}
-	if err := c.Bind(&request); err != nil {
+	request := &requests.LoginRequest{}
+	if err := c.Bind(request); err != nil {
 		return responses.Error(c, http.StatusBadRequest, "Invalid request payload")
 	}
-	if err := c.Validate(&request); err != nil {
+	if err := c.Validate(request); err != nil {
 		return responses.Error(c, http.StatusBadRequest, "Email and password are required")
 	}
 
 	user := &models.User{}
-	h.server.Db.NewSelect().Model(&models.User{}).Where("email = ?", request.Email).Scan(ctx, user)
-	if user.ID == "" {
+	err := h.server.Db.NewSelect().Model(user).Where("email = ?", request.Email).Limit(1).Scan(ctx)
+	if errors.Is(err, sql.ErrNoRows) {
 		return responses.Error(c, http.StatusUnauthorized, "Invalid email or password")
+	}
+	if err != nil {
+		log.Printf("Error looking up user while logging in: %v", err)
+		return responses.Error(c, http.StatusInternalServerError, "Error logging in user")
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(request.Password)); err != nil {
@@ -87,19 +91,19 @@ func (h *AuthHandler) Login(c *echo.Context) error {
 
 	accessToken, err := h.server.JWT.SignAccessToken(user.ID)
 	if err != nil {
-		log.Println(err)
-		return responses.Error(c, http.StatusInternalServerError, "Error logining in user")
+		log.Printf("Error signing access token while logging in: %v", err)
+		return responses.Error(c, http.StatusInternalServerError, "Error logging in user")
 	}
 	refreshToken, err := h.server.JWT.SignRefreshToken(user.ID)
 	if err != nil {
-		log.Println(err)
-		return responses.Error(c, http.StatusInternalServerError, "Error logining in user")
+		log.Printf("Error signing refresh token while logging in: %v", err)
+		return responses.Error(c, http.StatusInternalServerError, "Error logging in user")
 	}
 
 	h.tokenService.SetAccessCookie(c, accessToken)
 	h.tokenService.SetRefreshCookie(c, refreshToken)
 
-	return responses.Success(c, http.StatusOK, "Logined in successfully")
+	return responses.Success(c, http.StatusOK, "Logged in successfully")
 }
 
 func (h *AuthHandler) Refresh(c *echo.Context) error {

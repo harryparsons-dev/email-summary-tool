@@ -16,9 +16,8 @@ const (
 	refreshTokenType       = "refresh"
 )
 
-// Config owns the JWT signing key and token settings. Keeping the key
-// private prevents handlers and middleware from retaining their own direct
-// references to it.
+// Config owns the JWT signing key and token settings. Sign and verify tokens
+// through its methods rather than reading SigningKey directly.
 type Config struct {
 	SigningKey      []byte
 	AccessLifetime  time.Duration

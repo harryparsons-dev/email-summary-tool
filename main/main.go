@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
+
 	"email-summary-tool/database/migrations"
 	"email-summary-tool/pkg/jwt"
 	"email-summary-tool/pkg/mailserver"
@@ -16,6 +18,7 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/emersion/go-smtp"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
@@ -84,7 +87,7 @@ func main() {
 	defer smtpServer.Close()
 	go func() {
 		log.Printf("SMTP server accepting mail for @%s on %s", inboundDomain, smtpAddr)
-		if err := smtpServer.ListenAndServe(); err != nil {
+		if err := smtpServer.ListenAndServe(); err != nil && !errors.Is(err, smtp.ErrServerClosed) {
 			log.Fatalf("SMTP server stopped: %v", err)
 		}
 	}()

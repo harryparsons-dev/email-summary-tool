@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
+	"database/sql"
 	"errors"
 	"fmt"
 	"io"
@@ -29,11 +30,12 @@ func NewInboundEmailService(s *server.Server) *InboundEmailService {
 }
 
 // FindProject returns the project that owns address, or nil if no project
-// does.
-func (s *InboundEmailService) FindProject(ctx context.Context, address string) *models.Project {
+// does. An error means the lookup itself failed, so the address may still
+// belong to a project.
+func (s *InboundEmailService) FindProject(ctx context.Context, address string) (*models.Project, error) {
 	address = NormalizeAddress(address)
 	if AddressDomain(address) != NormalizeAddress(s.Server.Dependencies.InboundDomain) {
-		return nil
+		return nil, nil
 	}
 
 	project := &models.Project{}
@@ -43,10 +45,13 @@ func (s *InboundEmailService) FindProject(ctx context.Context, address string) *
 		Where("email_address = ?", address).
 		Limit(1).
 		Scan(ctx)
-	if err != nil {
-		return nil
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
 	}
-	return project
+	if err != nil {
+		return nil, fmt.Errorf("find project for %q: %w", address, err)
+	}
+	return project, nil
 }
 
 // Recipient is one accepted envelope recipient and the project it belongs to.

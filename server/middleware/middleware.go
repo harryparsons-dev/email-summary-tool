@@ -1,9 +1,12 @@
 package middleware
 
 import (
+	"database/sql"
 	"email-summary-tool/database/models"
 	"email-summary-tool/pkg/responses"
 	"email-summary-tool/server"
+	"errors"
+	"log"
 	"net/http"
 
 	"github.com/labstack/echo/v5"
@@ -24,11 +27,14 @@ func Authenticated(server *server.Server) echo.MiddlewareFunc {
 				return responses.Error(c, http.StatusUnauthorized, "Invalid or expired authentication cookie")
 			}
 
-			// get the user
 			user := &models.User{}
-			server.Db.NewSelect().Model(user).Where("id = ?", userID).Scan(ctx)
-			if user.ID == "" {
+			err = server.Db.NewSelect().Model(user).Where("id = ?", userID).Scan(ctx)
+			if errors.Is(err, sql.ErrNoRows) {
 				return responses.Error(c, http.StatusUnauthorized, "User not found")
+			}
+			if err != nil {
+				log.Printf("Error looking up authenticated user: %v", err)
+				return responses.Error(c, http.StatusInternalServerError, "Error authenticating request")
 			}
 
 			c.Set("user", user)

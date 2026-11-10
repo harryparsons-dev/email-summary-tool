@@ -56,7 +56,17 @@ func (s *session) Rcpt(to string, _ *smtp.RcptOptions) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	project := s.inbox.FindProject(ctx, to)
+	project, err := s.inbox.FindProject(ctx, to)
+	if err != nil {
+		log.Printf("smtp: %v", err)
+		// The mailbox may exist, so ask the sending server to retry rather
+		// than bounce the message.
+		return &smtp.SMTPError{
+			Code:         451,
+			EnhancedCode: smtp.EnhancedCode{4, 3, 0},
+			Message:      "Temporary error checking mailbox, please try again later",
+		}
+	}
 	if project == nil {
 		return &smtp.SMTPError{
 			Code:         550,

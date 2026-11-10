@@ -34,7 +34,10 @@ func TestInboundEmailServiceFindProject(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			found := service.FindProject(t.Context(), tc.address)
+			found, err := service.FindProject(t.Context(), tc.address)
+			if err != nil {
+				t.Fatalf("FindProject() error = %v", err)
+			}
 			projectID := ""
 			if found != nil {
 				projectID = found.ID

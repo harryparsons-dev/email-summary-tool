@@ -43,6 +43,9 @@ func NewServer(jwtConfig *jwt.Config, db *bun.DB, dependencies *services.Depende
 		},
 	}))
 
+	e.Use(middleware.Recover())
+	e.Use(middleware.BodyLimit(1048576)) // 1 MB
+
 	return &Server{
 		E:   e,
 		Db:  db,

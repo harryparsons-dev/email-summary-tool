@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
+	"strings"
 	"testing"
 
 	"email-summary-tool/database/factories"
@@ -77,6 +78,29 @@ func TestProjectList(t *testing.T) {
 				},
 				BodyDoesNotExist: map[string]any{
 					"id": otherProject.ID,
+				},
+			},
+		},
+		{
+			TestName: "Out-of-range paging falls back to the first page and the largest page size",
+			Request: pkg.Request{
+				Method: http.MethodGet,
+				Path:   "/projects?page=-1&page_size=1000",
+			},
+			ExpectedResult: pkg.ExpectedResult{
+				StatusCode: http.StatusOK,
+				Body: map[string]any{
+					"projects": []any{
+						map[string]any{
+							"id":          project.ID,
+							"name":        project.Title,
+							"description": project.Description,
+							"status":      string(project.Status),
+						},
+					},
+					"page":      1,
+					"page_size": 100,
+					"total":     1,
 				},
 			},
 		},
@@ -204,6 +228,32 @@ func TestProjectsCreate(t *testing.T) {
 			ExpectedResult: pkg.ExpectedResult{
 				StatusCode: http.StatusBadRequest,
 				Body:       "Invalid project status",
+			},
+		},
+		{
+			TestName: "Cannot create a project with missing required fields",
+			Request:  request,
+			RequestBody: map[string]any{
+				"name":        " ",
+				"description": "",
+				"status":      "pending",
+			},
+			ExpectedResult: pkg.ExpectedResult{
+				StatusCode: http.StatusBadRequest,
+				Body:       "Invalid request body",
+			},
+		},
+		{
+			TestName: "Cannot create a project with a name longer than 255 characters",
+			Request:  request,
+			RequestBody: map[string]any{
+				"name":        strings.Repeat("n", 256),
+				"description": "Summarise the daily inbox",
+				"status":      "pending",
+			},
+			ExpectedResult: pkg.ExpectedResult{
+				StatusCode: http.StatusBadRequest,
+				Body:       "Invalid request body",
 			},
 		},
 	}

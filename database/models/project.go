@@ -18,10 +18,6 @@ var ValidProjectStatuses = map[ProjectStatus]bool{
 	projectStatusArchived:   true,
 }
 
-// ProjectEmailAddressAttempts bounds retries when a generated address is
-// already taken, which with 60 random bits should practically never happen.
-const ProjectEmailAddressAttempts = 5
-
 type Project struct {
 	UuidBase
 

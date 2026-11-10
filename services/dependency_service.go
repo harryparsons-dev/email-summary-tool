@@ -25,7 +25,8 @@ func NewDependencyService(inboundDomain string, summarizer summary.Summarizer) *
 	}
 }
 
-// CreateWg returns the wait group that tracks background tasks.
+// CreateWg starts tracking background tasks with a wait group, so callers can
+// wait for them through GetWg. Without it, WgAdd and WgDone do nothing.
 func (d *DependencyService) CreateWg() {
 	d.Wg = &sync.WaitGroup{}
 }

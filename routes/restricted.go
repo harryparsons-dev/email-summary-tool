@@ -2,7 +2,7 @@ package routes
 
 import (
 	"email-summary-tool/server"
-	projecthandlers "email-summary-tool/server/handlers/project_handlers.go"
+	projecthandlers "email-summary-tool/server/handlers/project_handlers"
 	"email-summary-tool/server/middleware"
 )
 
