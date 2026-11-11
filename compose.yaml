@@ -9,11 +9,6 @@ services:
     init: true
     env_file:
       - .env
-    environment:
-      # Development connects as the PostgreSQL superuser. Production uses a
-      # separate restricted role (see compose.prod.yaml).
-      DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
     depends_on:
       postgres:
         condition: service_healthy
@@ -55,6 +50,8 @@ services:
       - "5434:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Creates the DB_USER role the API connects as, on first start.
+      - ./database/initdb:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s

@@ -27,7 +27,7 @@ Create the local environment file:
 cp .env.example .env
 ```
 
-Open `.env` and replace the example PostgreSQL password and JWT secret. The API
+Open `.env` and replace the example PostgreSQL passwords and JWT secret. The API
 constructs its database URL from the PostgreSQL settings. Then
 build and start the development stack:
 
@@ -201,10 +201,10 @@ Docker Compose reads the following values from `.env`:
 | Variable | Purpose |
 | --- | --- |
 | `POSTGRES_DB` | Name of the local application database |
-| `POSTGRES_USER` | PostgreSQL superuser; the API connects as it in development only |
+| `POSTGRES_USER` | PostgreSQL superuser, for administration only; the API does not connect as it |
 | `POSTGRES_PASSWORD` | Password for the PostgreSQL superuser |
-| `DB_USER` | Production only: restricted role the API connects as |
-| `DB_PASSWORD` | Production only: password for `DB_USER` |
+| `DB_USER` | Restricted role the API connects as (default `mailai`) |
+| `DB_PASSWORD` | Password for `DB_USER` |
 | `SECRET_KEY` | Secret used to sign and verify authentication tokens |
 | `INBOUND_EMAIL_DOMAIN` | Domain for generated project addresses (default `localhost`) |
 | `SMTP_ADDR` | Address the built-in SMTP server listens on (default `:2525`) |
@@ -219,7 +219,7 @@ that serves the built frontend, proxies `/api` to the API, and manages the TLS
 certificate. Only ports 80, 443, and 25 (inbound mail) are published; the API
 and PostgreSQL are not reachable from outside.
 
-In production the API connects as `DB_USER`, a role that owns the application
+The API connects as `DB_USER`, a role that owns the application
 database but is not a superuser. `database/initdb` creates it when the
 PostgreSQL volume is first initialised, so `DB_USER` and `DB_PASSWORD` must be
 set before the first start; changing them later does not update an existing

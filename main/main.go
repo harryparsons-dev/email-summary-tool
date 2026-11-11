@@ -34,8 +34,8 @@ func main() {
 	inboundDomain := envOrDefault("INBOUND_EMAIL_DOMAIN", "localhost")
 	smtpAddr := envOrDefault("SMTP_ADDR", ":2525")
 
-	// The role the API connects as. In production this is a restricted role,
-	// not the PostgreSQL superuser.
+	// The role the API connects as: a restricted role, not the PostgreSQL
+	// superuser.
 	dbUser := os.Getenv("DB_USER")
 	if dbUser == "" {
 		log.Fatal("DB_USER is not set")

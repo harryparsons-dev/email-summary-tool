@@ -28,7 +28,7 @@ import (
 const (
 	testJWTSecret   = "integration-test-secret-key-32-characters-minimum"
 	testUserEmail   = "api-test@example.com"
-	testDatabaseURL = "postgres://postgres:postgres@127.0.0.1:5435/mailai_test?sslmode=disable"
+	testDatabaseURL = "postgres://mailai:postgres@127.0.0.1:5435/mailai_test?sslmode=disable"
 )
 
 type APITestServer struct {
