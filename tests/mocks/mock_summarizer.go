@@ -5,8 +5,8 @@ import (
 	"context"
 	"fmt"
 
-	"email-summary-tool/database/models"
-	"email-summary-tool/services/summary"
+	"mailai/database/models"
+	"mailai/services/summary"
 )
 
 // MockSummarizer stands in for the Claude API so tests are free and

@@ -51,9 +51,9 @@ async function signOut() {
   >
     <template #header="{ collapsed }">
       <!-- When collapsed there is only room for one button, so the logo makes way for the expand button. -->
-      <RouterLink v-if="!collapsed" to="/projects" class="flex min-w-0 items-center gap-2.5" aria-label="Briefly home">
+      <RouterLink v-if="!collapsed" to="/projects" class="flex min-w-0 items-center gap-2.5" aria-label="mailai home">
         <UAvatar icon="i-lucide-mail" size="sm" :ui="{ root: 'bg-primary', icon: 'text-inverted' }" />
-        <span class="truncate font-semibold text-highlighted">Briefly</span>
+        <span class="truncate font-semibold text-highlighted">mailai</span>
       </RouterLink>
       <UDashboardSidebarCollapse :class="collapsed ? 'mx-auto' : 'ms-auto'" />
     </template>

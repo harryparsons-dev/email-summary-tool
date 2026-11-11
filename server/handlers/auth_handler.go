@@ -2,14 +2,14 @@ package handlers
 
 import (
 	"database/sql"
-	"email-summary-tool/database/models"
-	"email-summary-tool/pkg/responses"
-	"email-summary-tool/server"
-	"email-summary-tool/server/requests"
-	userresponses "email-summary-tool/server/responses"
-	tokenservice "email-summary-tool/services/tokenService"
 	"errors"
 	"log"
+	"mailai/database/models"
+	"mailai/pkg/responses"
+	"mailai/server"
+	"mailai/server/requests"
+	userresponses "mailai/server/responses"
+	tokenservice "mailai/services/tokenService"
 	"net/http"
 
 	"github.com/labstack/echo/v5"

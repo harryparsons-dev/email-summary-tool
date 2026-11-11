@@ -3,7 +3,7 @@ package services
 import (
 	"sync"
 
-	"email-summary-tool/services/summary"
+	"mailai/services/summary"
 )
 
 // DependencyService groups the shared dependencies that handlers and services

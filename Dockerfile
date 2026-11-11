@@ -7,11 +7,11 @@ RUN go mod download
 
 COPY . .
 
-CMD ["go", "tool", "CompileDaemon", "-build=go build -buildvcs=false -o /tmp/email-summary-tool ./main", "-command=/tmp/email-summary-tool", "-pattern=(.+\\.go|.+\\.sql)$", "-exclude-dir=.git", "-exclude-dir=frontend", "-exclude-dir=tmp", "-polling", "-polling-interval=200", "-graceful-kill"]
+CMD ["go", "tool", "CompileDaemon", "-build=go build -buildvcs=false -o /tmp/mailai ./main", "-command=/tmp/mailai", "-pattern=(.+\\.go|.+\\.sql)$", "-exclude-dir=.git", "-exclude-dir=frontend", "-exclude-dir=tmp", "-polling", "-polling-interval=200", "-graceful-kill"]
 
 FROM development AS build
 
-RUN CGO_ENABLED=0 GOOS=linux go build -buildvcs=false -o /email-summary-tool ./main
+RUN CGO_ENABLED=0 GOOS=linux go build -buildvcs=false -o /mailai ./main
 
 FROM alpine:3.23
 
@@ -19,9 +19,9 @@ RUN apk add --no-cache ca-certificates \
     && addgroup -S app \
     && adduser -S -G app app
 
-COPY --from=build /email-summary-tool /usr/local/bin/email-summary-tool
+COPY --from=build /mailai /usr/local/bin/mailai
 
 USER app
 EXPOSE 8080 2525
 
-ENTRYPOINT ["email-summary-tool"]
+ENTRYPOINT ["mailai"]

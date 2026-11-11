@@ -6,10 +6,10 @@ import (
 	"strings"
 	"testing"
 
-	"email-summary-tool/database/factories"
-	"email-summary-tool/database/models"
-	"email-summary-tool/pkg/mailserver"
-	"email-summary-tool/services/inbound"
+	"mailai/database/factories"
+	"mailai/database/models"
+	"mailai/pkg/mailserver"
+	"mailai/services/inbound"
 
 	"github.com/emersion/go-smtp"
 )

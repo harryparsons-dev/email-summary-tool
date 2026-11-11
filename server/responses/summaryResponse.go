@@ -3,7 +3,7 @@ package responses
 import (
 	"time"
 
-	"email-summary-tool/database/models"
+	"mailai/database/models"
 )
 
 type SummaryResponse struct {

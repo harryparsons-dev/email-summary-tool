@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"email-summary-tool/services/inbound"
+	"mailai/services/inbound"
 )
 
 func TestGenerateAddress(t *testing.T) {

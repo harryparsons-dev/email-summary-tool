@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"email-summary-tool/database/models"
-	"email-summary-tool/services/summary"
+	"mailai/database/models"
+	"mailai/services/summary"
 
 	"github.com/anthropics/anthropic-sdk-go/v2/option"
 )

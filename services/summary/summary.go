@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"email-summary-tool/database/models"
+	"mailai/database/models"
 
 	"github.com/anthropics/anthropic-sdk-go/v2"
 	"github.com/anthropics/anthropic-sdk-go/v2/option"

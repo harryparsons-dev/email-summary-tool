@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"email-summary-tool/pkg"
+	"mailai/pkg"
 )
 
 // TestServer is created once and shared by every test file in this package.

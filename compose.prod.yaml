@@ -4,7 +4,7 @@
 # Only the web service (80/443) and inbound SMTP (25) are published. The API
 # and PostgreSQL are reachable only on the internal Compose network.
 
-name: email-summary-tool-prod
+name: mailai-prod
 
 services:
   api:
@@ -12,9 +12,15 @@ services:
       context: .
       dockerfile: Dockerfile
     init: true
-    env_file:
-      - .env
+    # Variables are listed one by one so the API never receives the PostgreSQL
+    # superuser password; it connects as the restricted DB_USER role.
     environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env}
+      DB_USER: ${DB_USER:?Set DB_USER in .env}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in .env}
+      INBOUND_EMAIL_DOMAIN: ${INBOUND_EMAIL_DOMAIN:?Set INBOUND_EMAIL_DOMAIN in .env}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       # The site is served over HTTPS, so auth cookies must be HTTPS-only.
       COOKIE_SECURE: "true"
       SMTP_ADDR: ":2525"
@@ -52,10 +58,17 @@ services:
 
   postgres:
     image: postgres:17-alpine
-    env_file:
-      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env}
+      # Superuser, for administration only. The API does not use it.
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      # Role created for the API by database/initdb on first start.
+      DB_USER: ${DB_USER:?Set DB_USER in .env}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./database/initdb:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s

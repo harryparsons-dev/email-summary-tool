@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"email-summary-tool/database/models"
-	"email-summary-tool/pkg"
+	"mailai/database/models"
+	"mailai/pkg"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"email-summary-tool/database/models"
+	"mailai/database/models"
 )
 
 // maxProjectNameLength matches the projects.title column.

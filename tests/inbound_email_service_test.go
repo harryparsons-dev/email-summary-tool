@@ -4,9 +4,9 @@ import (
 	"strings"
 	"testing"
 
-	"email-summary-tool/database/factories"
-	"email-summary-tool/database/models"
-	"email-summary-tool/services/inbound"
+	"mailai/database/factories"
+	"mailai/database/models"
+	"mailai/services/inbound"
 )
 
 func TestInboundEmailServiceFindProject(t *testing.T) {

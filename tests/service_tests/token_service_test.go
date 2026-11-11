@@ -1,8 +1,8 @@
 package servicetests
 
 import (
-	"email-summary-tool/pkg/jwt"
-	tokenservice "email-summary-tool/services/tokenService"
+	"mailai/pkg/jwt"
+	tokenservice "mailai/services/tokenService"
 	"net/http"
 	"net/http/httptest"
 	"testing"

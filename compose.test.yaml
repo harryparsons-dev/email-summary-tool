@@ -1,10 +1,10 @@
-name: email-summary-tool-tests
+name: mailai-tests
 
 services:
   test-postgres:
     image: postgres:17-alpine
     environment:
-      POSTGRES_DB: email_summary_test
+      POSTGRES_DB: mailai_test
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:

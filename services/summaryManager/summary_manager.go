@@ -10,9 +10,9 @@ import (
 	"log"
 	"time"
 
-	"email-summary-tool/database/models"
-	"email-summary-tool/server"
-	"email-summary-tool/services/summary"
+	"mailai/database/models"
+	"mailai/server"
+	"mailai/services/summary"
 )
 
 const (

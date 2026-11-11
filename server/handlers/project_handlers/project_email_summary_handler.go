@@ -6,11 +6,11 @@ import (
 	"log"
 	"net/http"
 
-	"email-summary-tool/database/models"
-	"email-summary-tool/pkg/responses"
-	"email-summary-tool/server"
-	projectresponses "email-summary-tool/server/responses"
-	summarymanager "email-summary-tool/services/summaryManager"
+	"mailai/database/models"
+	"mailai/pkg/responses"
+	"mailai/server"
+	projectresponses "mailai/server/responses"
+	summarymanager "mailai/services/summaryManager"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"

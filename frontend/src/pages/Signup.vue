@@ -86,7 +86,7 @@ async function submit(event: FormSubmitEvent<SignupState>) {
           v-else
           icon="i-lucide-user-plus"
           title="Create your account"
-          description="Set up your Briefly workspace in seconds."
+          description="Set up your mailai workspace in seconds."
           :fields="fields"
           :validate="validate"
           :loading="isSubmitting"

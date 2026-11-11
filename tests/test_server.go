@@ -3,14 +3,14 @@ package tests
 import (
 	"context"
 	"database/sql"
-	"email-summary-tool/database/migrations"
-	"email-summary-tool/database/models"
-	"email-summary-tool/pkg/jwt"
-	"email-summary-tool/routes"
-	"email-summary-tool/server"
-	"email-summary-tool/services"
-	"email-summary-tool/tests/mocks"
 	"fmt"
+	"mailai/database/migrations"
+	"mailai/database/models"
+	"mailai/pkg/jwt"
+	"mailai/routes"
+	"mailai/server"
+	"mailai/services"
+	"mailai/tests/mocks"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -28,7 +28,7 @@ import (
 const (
 	testJWTSecret   = "integration-test-secret-key-32-characters-minimum"
 	testUserEmail   = "api-test@example.com"
-	testDatabaseURL = "postgres://postgres:postgres@127.0.0.1:5435/email_summary_test?sslmode=disable"
+	testDatabaseURL = "postgres://postgres:postgres@127.0.0.1:5435/mailai_test?sslmode=disable"
 )
 
 type APITestServer struct {

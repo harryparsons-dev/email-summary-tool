@@ -9,7 +9,7 @@
 *.dylib
 
 # Locally built application binaries
-/email-summary-tool
+/mailai
 /main/main
 /server/server
 

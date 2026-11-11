@@ -108,7 +108,7 @@ async function loadProfile() {
 
         <UPageCard
           title="Appearance"
-          description="Choose how Briefly looks on this device."
+          description="Choose how mailai looks on this device."
           variant="subtle"
           orientation="horizontal"
           :ui="{ container: 'items-center' }"

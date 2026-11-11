@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"email-summary-tool/database/factories"
-	"email-summary-tool/database/models"
-	"email-summary-tool/pkg"
-	"email-summary-tool/server/requests"
+	"mailai/database/factories"
+	"mailai/database/models"
+	"mailai/pkg"
+	"mailai/server/requests"
 
 	"github.com/google/uuid"
 )

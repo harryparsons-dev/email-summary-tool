@@ -1,4 +1,4 @@
-module email-summary-tool
+module mailai
 
 go 1.26.5
 

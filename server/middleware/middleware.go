@@ -2,11 +2,11 @@ package middleware
 
 import (
 	"database/sql"
-	"email-summary-tool/database/models"
-	"email-summary-tool/pkg/responses"
-	"email-summary-tool/server"
 	"errors"
 	"log"
+	"mailai/database/models"
+	"mailai/pkg/responses"
+	"mailai/server"
 	"net/http"
 
 	"github.com/labstack/echo/v5"

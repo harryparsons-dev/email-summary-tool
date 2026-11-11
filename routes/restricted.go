@@ -1,9 +1,9 @@
 package routes
 
 import (
-	"email-summary-tool/server"
-	projecthandlers "email-summary-tool/server/handlers/project_handlers"
-	"email-summary-tool/server/middleware"
+	"mailai/server"
+	projecthandlers "mailai/server/handlers/project_handlers"
+	"mailai/server/middleware"
 )
 
 // InitializeRestrictedRoutes registers routes that require an authenticated user.

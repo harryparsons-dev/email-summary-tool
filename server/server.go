@@ -1,11 +1,11 @@
 package server
 
 import (
-	"email-summary-tool/pkg/jwt"
-	appvalidator "email-summary-tool/pkg/validator"
-	"email-summary-tool/services"
 	"log"
 	"log/slog"
+	"mailai/pkg/jwt"
+	appvalidator "mailai/pkg/validator"
+	"mailai/services"
 	"os"
 
 	"github.com/labstack/echo/v5"

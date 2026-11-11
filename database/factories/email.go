@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"email-summary-tool/database/models"
+	"mailai/database/models"
 
 	"github.com/uptrace/bun"
 )

@@ -1,3 +1,5 @@
+name: mailai
+
 services:
   api:
     build:
@@ -7,6 +9,11 @@ services:
     init: true
     env_file:
       - .env
+    environment:
+      # Development connects as the PostgreSQL superuser. Production uses a
+      # separate restricted role (see compose.prod.yaml).
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
     depends_on:
       postgres:
         condition: service_healthy

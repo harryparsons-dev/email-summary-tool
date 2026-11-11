@@ -8,7 +8,7 @@ import (
 	"log"
 	"time"
 
-	"email-summary-tool/services/inbound"
+	"mailai/services/inbound"
 
 	"github.com/emersion/go-smtp"
 )

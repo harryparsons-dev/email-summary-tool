@@ -1,7 +1,7 @@
 package tokenservice
 
 import (
-	"email-summary-tool/pkg/jwt"
+	"mailai/pkg/jwt"
 	"net/http"
 	"time"
 

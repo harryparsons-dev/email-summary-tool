@@ -54,7 +54,7 @@ async function submit(event: FormSubmitEvent<LoginState>) {
       <UAuthForm
         icon="i-lucide-mail"
         title="Welcome back"
-        description="Log in to your Briefly workspace."
+        description="Log in to your mailai workspace."
         :fields="fields"
         :loading="isSubmitting"
         :submit="{ label: 'Log in', size: 'lg', block: true }"

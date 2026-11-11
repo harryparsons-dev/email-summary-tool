@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"email-summary-tool/database/models"
-	"email-summary-tool/services/inbound"
+	"mailai/database/models"
+	"mailai/services/inbound"
 
 	"github.com/uptrace/bun"
 )

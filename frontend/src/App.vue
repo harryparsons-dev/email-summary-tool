@@ -21,7 +21,7 @@ const isAuthLayout = computed(() => route.meta.layout === 'auth')
       </RouterView>
     </div>
 
-    <UDashboardGroup v-else unit="rem" storage-key="briefly-dashboard">
+    <UDashboardGroup v-else unit="rem" storage-key="mailai-dashboard">
       <AppSidebar />
 
       <RouterView v-slot="{ Component }">

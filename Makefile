@@ -1,6 +1,6 @@
 .PHONY: help migration test-api
 
-TEST_DATABASE_URL ?= postgres://postgres:postgres@127.0.0.1:5435/email_summary_test?sslmode=disable
+TEST_DATABASE_URL ?= postgres://postgres:postgres@127.0.0.1:5435/mailai_test?sslmode=disable
 
 help:
 	@echo "Available targets:"

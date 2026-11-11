@@ -5,16 +5,16 @@ import (
 	"database/sql"
 	"errors"
 
-	"email-summary-tool/database/migrations"
-	"email-summary-tool/pkg/jwt"
-	"email-summary-tool/pkg/mailserver"
-	"email-summary-tool/routes"
-	"email-summary-tool/server"
-	"email-summary-tool/services"
-	"email-summary-tool/services/inbound"
-	"email-summary-tool/services/summary"
-	summarymanager "email-summary-tool/services/summaryManager"
 	"log"
+	"mailai/database/migrations"
+	"mailai/pkg/jwt"
+	"mailai/pkg/mailserver"
+	"mailai/routes"
+	"mailai/server"
+	"mailai/services"
+	"mailai/services/inbound"
+	"mailai/services/summary"
+	summarymanager "mailai/services/summaryManager"
 	"net/url"
 	"os"
 
@@ -34,14 +34,16 @@ func main() {
 	inboundDomain := envOrDefault("INBOUND_EMAIL_DOMAIN", "localhost")
 	smtpAddr := envOrDefault("SMTP_ADDR", ":2525")
 
-	postgresUser := os.Getenv("POSTGRES_USER")
-	if postgresUser == "" {
-		log.Fatal("POSTGRES_USER is not set")
+	// The role the API connects as. In production this is a restricted role,
+	// not the PostgreSQL superuser.
+	dbUser := os.Getenv("DB_USER")
+	if dbUser == "" {
+		log.Fatal("DB_USER is not set")
 	}
 
-	postgresPassword := os.Getenv("POSTGRES_PASSWORD")
-	if postgresPassword == "" {
-		log.Fatal("POSTGRES_PASSWORD is not set")
+	dbPassword := os.Getenv("DB_PASSWORD")
+	if dbPassword == "" {
+		log.Fatal("DB_PASSWORD is not set")
 	}
 
 	postgresDB := os.Getenv("POSTGRES_DB")
@@ -51,7 +53,7 @@ func main() {
 
 	databaseURL := (&url.URL{
 		Scheme:   "postgres",
-		User:     url.UserPassword(postgresUser, postgresPassword),
+		User:     url.UserPassword(dbUser, dbPassword),
 		Host:     "postgres:5432",
 		Path:     postgresDB,
 		RawQuery: "sslmode=disable",

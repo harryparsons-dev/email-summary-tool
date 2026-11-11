@@ -1,6 +1,6 @@
 package responses
 
-import "email-summary-tool/database/models"
+import "mailai/database/models"
 
 type UserResponse struct {
 	ID    string `json:"id"`

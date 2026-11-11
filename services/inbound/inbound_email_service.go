@@ -13,8 +13,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"email-summary-tool/database/models"
-	"email-summary-tool/server"
+	"mailai/database/models"
+	"mailai/server"
 
 	"github.com/emersion/go-message"
 	_ "github.com/emersion/go-message/charset" // decode non-UTF-8 charsets

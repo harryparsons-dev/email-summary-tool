@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"testing"
 
-	"email-summary-tool/database/factories"
-	"email-summary-tool/database/models"
-	"email-summary-tool/pkg"
-	"email-summary-tool/services/summary"
-	summarymanager "email-summary-tool/services/summaryManager"
+	"mailai/database/factories"
+	"mailai/database/models"
+	"mailai/pkg"
+	"mailai/services/summary"
+	summarymanager "mailai/services/summaryManager"
 
 	"github.com/google/uuid"
 )
