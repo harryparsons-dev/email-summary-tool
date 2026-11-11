@@ -27,7 +27,7 @@ func (s *TokenService) SetAccessCookie(c *echo.Context, token string) {
 		Value:    token,
 		MaxAge:   s.jwtConfig.AccessCookieMaxAge(),
 		Path:     "/",
-		Secure:   false,
+		Secure:   s.jwtConfig.SecureCookies,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	})
@@ -39,7 +39,7 @@ func (s *TokenService) SetRefreshCookie(c *echo.Context, token string) {
 		Value:    token,
 		MaxAge:   s.jwtConfig.RefreshCookieMaxAge(),
 		Path:     "/",
-		Secure:   false,
+		Secure:   s.jwtConfig.SecureCookies,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	})
@@ -57,7 +57,7 @@ func (s *TokenService) clearCookie(c *echo.Context, name string) {
 		Path:     "/",
 		MaxAge:   -1,
 		Expires:  time.Unix(0, 0),
-		Secure:   false,
+		Secure:   s.jwtConfig.SecureCookies,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	})

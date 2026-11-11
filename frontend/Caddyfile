@@ -1,0 +1,17 @@
+# Production web server: serves the built frontend and proxies /api to the API.
+# Caddy obtains and renews the TLS certificate for APP_DOMAIN automatically.
+{$APP_DOMAIN:localhost} {
+	encode zstd gzip
+
+	# The frontend calls /api/...; the API itself has no /api prefix.
+	handle_path /api/* {
+		reverse_proxy api:8080
+	}
+
+	handle {
+		root * /srv
+		# Client-side routes such as /projects/123 fall back to the app shell.
+		try_files {path} /index.html
+		file_server
+	}
+}

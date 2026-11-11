@@ -22,6 +22,10 @@ type Config struct {
 	SigningKey      []byte
 	AccessLifetime  time.Duration
 	RefreshLifetime time.Duration
+
+	// SecureCookies marks the auth cookies as HTTPS-only. Enable it wherever
+	// the site is served over HTTPS; it stays off for local HTTP development.
+	SecureCookies bool
 }
 
 type jwtClaims struct {

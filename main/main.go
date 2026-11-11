@@ -29,6 +29,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	jwtConfig.SecureCookies = os.Getenv("COOKIE_SECURE") == "true"
 
 	inboundDomain := envOrDefault("INBOUND_EMAIL_DOMAIN", "localhost")
 	smtpAddr := envOrDefault("SMTP_ADDR", ":2525")

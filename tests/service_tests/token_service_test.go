@@ -27,6 +27,44 @@ func TestTokenServiceSetsAuthenticationCookies(t *testing.T) {
 	assertCookie(t, cookies[1], "RefreshToken", "refresh-token", 7*24*60*60)
 }
 
+func TestTokenServiceCookieSecureFlagFollowsConfig(t *testing.T) {
+	tests := []struct {
+		name          string
+		secureCookies bool
+	}{
+		{name: "HTTPS-only when secure cookies are enabled", secureCookies: true},
+		{name: "allowed over HTTP when secure cookies are disabled", secureCookies: false},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			jwtConfig, err := jwt.NewConfig("a-test-secret-that-is-at-least-32-characters")
+			if err != nil {
+				t.Fatalf("NewConfig() error = %v", err)
+			}
+			jwtConfig.SecureCookies = test.secureCookies
+			service := tokenservice.NewTokenService(jwtConfig)
+
+			response := httptest.NewRecorder()
+			context := echo.NewContext(httptest.NewRequest(http.MethodGet, "/", nil), response)
+
+			service.SetAccessCookie(context, "access-token")
+			service.SetRefreshCookie(context, "refresh-token")
+			service.ClearAuthCookies(context)
+
+			cookies := response.Result().Cookies()
+			if len(cookies) != 4 {
+				t.Fatalf("got %d cookies, want 4", len(cookies))
+			}
+			for _, cookie := range cookies {
+				if cookie.Secure != test.secureCookies {
+					t.Errorf("cookie %q Secure = %t, want %t", cookie.Name, cookie.Secure, test.secureCookies)
+				}
+			}
+		})
+	}
+}
+
 func TestTokenServiceClearsAuthenticationCookies(t *testing.T) {
 	service := newTestTokenService(t)
 	response := httptest.NewRecorder()

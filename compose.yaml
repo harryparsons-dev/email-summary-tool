@@ -27,6 +27,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      target: development
     init: true
     environment:
       VITE_API_PROXY_TARGET: http://api:8080

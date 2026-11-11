@@ -206,5 +206,22 @@ Docker Compose reads the following values from `.env`:
 | `SECRET_KEY` | Secret used to sign and verify authentication tokens |
 | `INBOUND_EMAIL_DOMAIN` | Domain for generated project addresses (default `localhost`) |
 | `SMTP_ADDR` | Address the built-in SMTP server listens on (default `:2525`) |
+| `APP_DOMAIN` | Production only: domain the app is served on, used by Caddy for HTTPS |
+| `COOKIE_SECURE` | `true` makes auth cookies HTTPS-only (set by `compose.prod.yaml`; default off) |
+| `ANTHROPIC_API_KEY` | API key for AI email summaries |
+
+## Production deployment
+
+`compose.prod.yaml` runs the compiled API, PostgreSQL, and a Caddy container
+that serves the built frontend, proxies `/api` to the API, and manages the TLS
+certificate. Only ports 80, 443, and 25 (inbound mail) are published; the API
+and PostgreSQL are not reachable from outside.
+
+On the server, create `.env` from `.env.example` with production values,
+point the DNS record for `APP_DOMAIN` at the server, then run:
+
+```sh
+docker compose -f compose.prod.yaml up --build --detach
+```
 
 Changing these values does not update an existing PostgreSQL volume. Reset the local data volume if the database has already been initialized and the credentials need to change.
